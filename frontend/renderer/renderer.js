@@ -37,6 +37,26 @@ function appendMessage(role, text) {
   chatLog.scrollTop = chatLog.scrollHeight;
 }
 
+// --- Aktif uzman göstergesi ---
+const SUBAGENT_LABELS = {
+  eligibility: "🔎 Uygunluk uzmanı bakıyor...",
+  guide: "📋 Rehber uzmanı bakıyor...",
+  tracking: "📌 Takip uzmanı bakıyor...",
+  security: "🛡️ Güvenlik uzmanı bakıyor...",
+};
+
+const subagentIndicator = document.getElementById("active-subagent-indicator");
+
+function renderActiveSubagent(activeSubagent) {
+  const label = SUBAGENT_LABELS[activeSubagent];
+  if (label) {
+    subagentIndicator.textContent = label;
+    subagentIndicator.hidden = false;
+  } else {
+    subagentIndicator.hidden = true;
+  }
+}
+
 chatForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const message = chatInput.value.trim();
@@ -53,10 +73,34 @@ chatForm.addEventListener("submit", async (e) => {
     const data = await res.json();
     appendMessage("assistant", data.reply);
     speak(data.reply);
+    renderActiveSubagent(data.active_subagent);
     if (data.case) renderCase(data.case);
   } catch (err) {
     appendMessage("assistant", "Bağlantı sorunu oluştu. (backend çalışıyor mu?)");
     console.error(err);
+  }
+});
+
+// --- Durum bildirimi (POST /case/status) ---
+const statusForm = document.getElementById("status-form");
+const statusInput = document.getElementById("status-input");
+
+statusForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const update = statusInput.value.trim();
+  if (!update) return;
+  statusInput.value = "";
+
+  try {
+    const res = await fetch(`${API_BASE}/case/status`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ update }),
+    });
+    const data = await res.json();
+    renderCase(data);
+  } catch (err) {
+    console.error("Durum bildirilemedi:", err);
   }
 });
 
@@ -78,6 +122,19 @@ function renderCase(caseData) {
     if (c.done) li.classList.add("done");
     checklist.appendChild(li);
   });
+
+  const appointments = document.getElementById("appointments-list");
+  appointments.innerHTML = "";
+  (caseData.appointments || []).forEach((a) => {
+    const li = document.createElement("li");
+    li.textContent = a.due_date ? `${a.description} — ${a.due_date}` : a.description;
+    appointments.appendChild(li);
+  });
+  if (appointments.children.length === 0) {
+    const li = document.createElement("li");
+    li.textContent = "Henüz kayıtlı randevu/son tarih yok.";
+    appointments.appendChild(li);
+  }
 
   const notifications = document.getElementById("notifications-list");
   notifications.innerHTML = "";

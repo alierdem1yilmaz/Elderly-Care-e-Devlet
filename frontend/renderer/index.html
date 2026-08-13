@@ -17,6 +17,7 @@
 
   <main>
     <section id="tab-chat" class="tab-panel active">
+      <div id="active-subagent-indicator" class="subagent-indicator" hidden></div>
       <div id="chat-log"></div>
       <form id="chat-form">
         <input id="chat-input" type="text" placeholder="Buraya yazın..." autocomplete="off" />
@@ -29,9 +30,17 @@
       <ul id="eligibility-list" class="card-list"></ul>
       <h2>Yapılacaklar Listesi</h2>
       <ul id="checklist-list" class="card-list"></ul>
+      <h2>Durum Bildir</h2>
+      <p class="hint">Bir belgeyi aldınız mı, bulamadınız mı ya da bir randevu mu aldınız? Buradan bildirin.</p>
+      <form id="status-form">
+        <input id="status-input" type="text" placeholder="Örn: Nüfus cüzdanı fotokopisini aldım" autocomplete="off" />
+        <button type="submit">Bildir</button>
+      </form>
     </section>
 
     <section id="tab-family" class="tab-panel">
+      <h2>Randevular / Son Tarihler</h2>
+      <ul id="appointments-list" class="card-list"></ul>
       <h2>Bildirimler</h2>
       <ul id="notifications-list" class="card-list"></ul>
     </section>

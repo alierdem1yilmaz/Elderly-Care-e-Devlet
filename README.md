@@ -47,6 +47,14 @@ git checkout -b feature/frontend          # Kişi 3
 ```
 Bitince her biri `main`'e PR/merge eder. `API_CONTRACT.md`'deki şemaları değiştirmeden önce diğer ikisine haber verin — üçünüz de o sözleşmeye göre paralel çalışıyorsunuz.
 
+> ⚠️ **Merge etmeden önce:** Kendi branch'ini `main`'e merge/PR açmadan önce **önce kendi branch'ini `main`'in üstüne getir**:
+> ```bash
+> git checkout <kendi-branch-adın>
+> git fetch origin
+> git merge origin/main      # ya da: git rebase origin/main
+> ```
+> Bunu atlayıp branch'ini olduğu gibi `main`'e merge etmek, paylaşılan kurulum dosyalarını (`API_CONTRACT.md`, `backend/`, `frontend/`) silebilir — branch'in geçmişi bu dosyaların eklendiği `shared project setup` commit'inin üstünde değilse merge bu farkı "silme" olarak yorumlayabilir. Özellikle **Kişi 3** (`feature/frontend`) branch'ini henüz bu commit'in üstüne almadıysa, merge/PR açmadan önce yukarıdaki adımı uygulamalı.
+
 ## Kapsam dışı (bilerek yapılmadı)
 Gerçek e-Devlet/MHRS entegrasyonu, telefon/IVR hattı, otomatik mevzuat güncelleme — bkz. plan dosyasındaki gerekçe (devlet sistemine karşı otomasyon risk taşıyor).
 # Elderly-Care-e-Devlet

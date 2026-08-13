@@ -42,18 +42,22 @@ Güncel vaka dosyası state'i.
   ],
   "notifications": [
     { "type": "reminder", "message": "Heyet raporu için MHRS randevusu almanız gerekiyor", "timestamp": "2026-08-13T10:00:00" }
+  ],
+  "appointments": [
+    { "description": "Randevu: MHRS randevumu 20.08.2026 tarihine aldım", "due_date": "2026-08-20", "reminded": false }
   ]
 }
 ```
+- `appointments`: kullanıcının bildirdiği randevu/son tarihler (Subagent C, `/case/status` içindeki serbest metinden tarih çıkarabilirse otomatik ekler). Son tarihe 3 gün veya daha az kaldığında (ya da geçtiğinde), her randevu için **bir kez** `notifications`'a otomatik bir `reminder` kaydı düşer — `GET /case` her çağrıldığında bu kontrol yapılır, ek bir endpoint/polling gerekmez.
 
 ## POST /case/status
-Kullanıcı/aile bir durumu bildirir (örn. "başvurdum", "bu belge bende yok"). Subagent C bunu işler, `notifications` günceller.
+Kullanıcı/aile bir durumu bildirir (örn. "başvurdum", "bu belge bende yok", "randevumu 20.08.2026'ya aldım"). Subagent C bunu işler, `notifications` (ve varsa `appointments`/`checklist`) günceller.
 
 **Request**
 ```json
 { "update": "Nüfus cüzdanı fotokopisini henüz alamadım" }
 ```
-**Response:** güncel `case` state'i (yukarıdaki şema).
+**Response:** güncel `case` state'i (yukarıdaki şema). Not: bu endpoint artık her çağrıda genel bir "kaydedildi" bildirimi eklemiyor — Subagent C'nin ürettiği tek, anlamlı bildirim yeterli.
 
 ## POST /scenario/missing-document
 Scripted demo tetikleyici — deterministic. Parametre gerekmez. Subagent C'nin eksik belge hatırlatmasını tetikler, `notifications`'a sabit bir kayıt ekler.

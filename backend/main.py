@@ -58,11 +58,11 @@ def get_case():
 
 
 @app.post("/case/status")
-async def case_status(req: StatusUpdateRequest):
-    result = await orchestrator.handle_message(
-        f"(Kullanıcı bir durum bildiriyor, buna göre gerekirse bir hatırlatma kaydet) {req.update}"
-    )
-    return result["case"]
+def case_status(req: StatusUpdateRequest):
+    # tracking_agent.handle_status_update zaten uygun bildirimi (reminder/status_update)
+    # case'e yazıyor — burada ayrıca genel bir "status_ack" eklemek çift bildirime yol açıyordu.
+    tracking_agent.handle_status_update(req.update)
+    return state.get_case()
 
 
 @app.post("/scenario/missing-document")

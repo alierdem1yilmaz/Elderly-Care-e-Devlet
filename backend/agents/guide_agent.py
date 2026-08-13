@@ -5,17 +5,24 @@
 # gidin" şeklinde referans niteliğinde bir rehber üretir. Çıktı checklist öğeleri
 # backend/state.py::set_checklist ile case'e yazılır.
 #
-# Not: Canlı sohbette (POST /chat) rehberlik hâlâ orchestrator.py'deki GUIDE_PROMPT
-# subagent'ı üzerinden LLM ile üretiliyor — bu modül orada çağrılmıyor. Burası
-# benefits.json'dan deterministik checklist/adım metni üreten, test edilmiş bir
-# yardımcı katman; ileride scripted-demo/fallback akışına (ör. /scenario/*) veya
-# GUIDE_PROMPT'un LLM yerine buna dayanmasına bağlanabilir.
+# Bu modülün fonksiyonları artık canlı sohbete BAĞLI: backend/tools.py'deki
+# get_program_guide MCP tool'u bunları sarmalıyor, guide subagent (GUIDE_PROMPT,
+# bkz. orchestrator.py) checklist eklemeden/adımları anlatmadan önce bu tool'u
+# çağırıyor. Amaç: belge isimleri/kurum/sıra gibi olgusal bilgi LLM'in hafızasından
+# değil, doğrudan benefits.json'dan (Kişi 2'nin doğruladığı veri) gelsin — LLM
+# sadece bu kesin veriyi sıcak bir dille kullanıcıya anlatıyor.
 
 from backend.state import load_benefits
 
 
 def _find_program(program: str, benefits: list[dict]) -> dict | None:
-    return next((b for b in benefits if b["name"] == program), None)
+    # LLM çağıran taraf bazen tam görünen ad ("65 Yaş Üstü Aylığı ..."), bazen
+    # benefits.json'daki kısa id'yi ("yaslilik-ayligi") geçiyor — ikisini de kabul et.
+    needle = program.strip().casefold()
+    for b in benefits:
+        if b["name"].casefold() == needle or b.get("id", "").casefold() == needle:
+            return b
+    return None
 
 
 def build_checklist(program: str, benefits: list[dict] | None = None) -> list[dict]:
@@ -35,7 +42,7 @@ def build_steps(program: str, benefits: list[dict] | None = None) -> str:
             "Sosyal Hizmetler İl Müdürlüğü'ne danışmanızı öneririm."
         )
 
-    lines = [f"{program} için izlemeniz gereken adımlar (siz kendiniz yapacaksınız):"]
+    lines = [f"{match['name']} için izlemeniz gereken adımlar (siz kendiniz yapacaksınız):"]
     for i, step in enumerate(match.get("steps", []), start=1):
         lines.append(f"{i}. {step}")
 

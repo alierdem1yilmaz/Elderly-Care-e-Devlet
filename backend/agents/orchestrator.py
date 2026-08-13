@@ -22,6 +22,7 @@ from claude_agent_sdk import (
 from backend.tools import (
     TOOL_ADD_CHECKLIST_ITEM,
     TOOL_ADD_NOTIFICATION,
+    TOOL_GET_PROGRAM_GUIDE,
     TOOL_RECORD_ELIGIBILITY,
     case_tools_server,
 )
@@ -30,6 +31,9 @@ from backend.state import get_case
 BENEFITS_PATH = Path(__file__).resolve().parent.parent / "data" / "benefits.json"
 _benefits_data = json.loads(BENEFITS_PATH.read_text(encoding="utf-8"))
 _BENEFITS_JSON_TEXT = json.dumps(_benefits_data["programs"], ensure_ascii=False, indent=2)
+_PROGRAM_ID_NAME_LIST = "\n".join(
+    f'- id="{p["id"]}" → {p["name"]}' for p in _benefits_data["programs"]
+)
 
 # --- "Guide-only" ilkesi: her prompt'un başında tekrarlanan ortak blok ---
 GUIDE_ONLY_RULE = """
@@ -80,14 +84,21 @@ Yardım programları ve kriterleri:
 """.strip()
 
 GUIDE_PROMPT = f"""
-Sen bir başvuru rehberi uzmanısın. Kullanıcının hak sahibi olduğu bir program için
-add_checklist_item tool'unu kullanarak gereken belge/adımları TEK TEK yapılacaklar
-listesine ekle, sonra bunları sade bir dille kullanıcıya anlat.
+Sen bir başvuru rehberi uzmanısın. Kullanıcının hak sahibi olduğu bir program için:
+
+1. ÖNCE get_program_guide tool'unu çağır (program parametresine aşağıdaki id'lerden
+   birini gir). Bu tool sana benefits.json'dan DOĞRULANMIŞ, kesin belge listesini
+   (required_documents) ve adım metnini (guide_text) döner.
+2. Dönen required_documents listesindeki HER belgeyi TEK TEK, birebir metinle
+   add_checklist_item ile yapılacaklar listesine ekle. Belge isimlerini kendi
+   hafızandan ASLA uydurma veya kısaltma — tool'un döndüğü metni aynen kullan.
+3. guide_text'i sade, sıcak bir dille kullanıcıya anlat; kurumu, sırayı ve önemli
+   notları (ör. tutar, süre) değiştirmeden aktar.
 
 {GUIDE_ONLY_RULE}
 
-Programlara ait belge/adım bilgisi:
-{_BENEFITS_JSON_TEXT}
+Programlar (get_program_guide çağırırken "program" parametresi için id kullan):
+{_PROGRAM_ID_NAME_LIST}
 """.strip()
 
 SECURITY_PROMPT = f"""
@@ -122,7 +133,7 @@ AGENTS = {
     "guide": AgentDefinition(
         description="Başvuru için adım adım rehber ve belge checklist'i üretir, ASLA form doldurmaz",
         prompt=GUIDE_PROMPT,
-        tools=[TOOL_ADD_CHECKLIST_ITEM],
+        tools=[TOOL_GET_PROGRAM_GUIDE, TOOL_ADD_CHECKLIST_ITEM],
     ),
     "security": AgentDefinition(
         description="e-Devlet giriş sürecinde sözlü rehberlik yapar, dolandırıcılık farkındalığı sağlar; şifre/OTP asla istemez",

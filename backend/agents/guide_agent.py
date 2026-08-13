@@ -1,22 +1,45 @@
 # Sahiplik: Kişi 2 (Backend İçerik & Takip)
 # Subagent B — Başvuru Rehberi
 #
-# TODO(Kişi 2): ÖNEMLİ İLKE — form DOLDURMAZ, başvuru GÖNDERMEZ. Sadece kullanıcıya
-# "e-Devlet'te şu hizmeti arayın, şu alana şunu yazacaksınız, şu belge lazım, şu
-# sırayla şu kurumlara gidin" şeklinde referans niteliğinde bir rehber üretir.
-# Çıktı checklist öğeleri backend/state.py::set_checklist ile case'e yazılır.
+# ÖNEMLİ İLKE: form DOLDURMAZ, başvuru GÖNDERMEZ. Sadece kullanıcıya
+# "e-Devlet'te/kurumda şu hizmeti arayın, şu belge lazım, şu sırayla şu kurumlara
+# gidin" şeklinde referans niteliğinde bir rehber üretir. Çıktı checklist öğeleri
+# backend/state.py::set_checklist ile case'e yazılır.
+
+from backend.state import load_benefits
 
 
-def build_checklist(program: str, benefits: list[dict]) -> list[dict]:
-    # --- MOCK ---
-    match = next((b for b in benefits if b["name"] == program), None)
+def _find_program(program: str, benefits: list[dict]) -> dict | None:
+    return next((b for b in benefits if b["name"] == program), None)
+
+
+def build_checklist(program: str, benefits: list[dict] | None = None) -> list[dict]:
+    benefits = benefits if benefits is not None else load_benefits()
+    match = _find_program(program, benefits)
     docs = match.get("required_documents", []) if match else []
     return [{"item": doc, "done": False} for doc in docs]
 
 
-def build_steps(program: str) -> str:
-    # --- MOCK ---
-    return (
-        f"{program} için e-Devlet'te ilgili hizmeti arayın, gerekli belgeleri "
-        "hazırlayın ve sırasıyla ilgili kurumlara başvurun. (mock rehber metni)"
-    )
+def build_steps(program: str, benefits: list[dict] | None = None) -> str:
+    benefits = benefits if benefits is not None else load_benefits()
+    match = _find_program(program, benefits)
+    if match is None:
+        return (
+            f"\"{program}\" için elimde kayıtlı bir rehber bulamadım. Bunun yerine "
+            "size en yakın Sosyal Yardımlaşma ve Dayanışma Vakfı'na veya Aile ve "
+            "Sosyal Hizmetler İl Müdürlüğü'ne danışmanızı öneririm."
+        )
+
+    lines = [f"{program} için izlemeniz gereken adımlar (siz kendiniz yapacaksınız):"]
+    for i, step in enumerate(match.get("steps", []), start=1):
+        lines.append(f"{i}. {step}")
+
+    admin = match.get("administered_by")
+    if admin:
+        lines.append(f"Bu programı yürüten kurum: {admin}")
+
+    notes = match.get("notes")
+    if notes:
+        lines.append(f"Not: {notes}")
+
+    return "\n".join(lines)

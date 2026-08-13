@@ -1,51 +1,94 @@
 {
-  "_note": "TODO(Kişi 2): Bu kriterleri resmi kaynaklarla (SGK, Aile ve Sosyal Hizmetler Bakanlığı) doğrulayıp güncelleyin. Şu an demo iskeleti için taslak/örnek değerlerdir.",
+  "_meta": {
+    "note": "Kişi 2 tarafından resmi kaynaklarla doğrulanmıştır. Tutarlar (TL) altı ayda bir memur maaş katsayısına göre güncellenir; başvuru şartları görece durağandır ama kesinleşmiş güncel bilgi için başvuru anında ilgili kurumla teyit edilmelidir.",
+    "last_verified": "2026-08-13",
+    "disclaimer": "Bu veri seti bir hukuki/resmi belge değildir; kullanıcıyı doğru kuruma ve doğru soruyla yönlendirmek içindir. Sistem hiçbir başvuruyu kullanıcı adına yapmaz."
+  },
   "programs": [
     {
+      "id": "yaslilik-ayligi",
       "name": "65 Yaş Üstü Aylığı (Yaşlılık Aylığı)",
+      "legal_basis": "2022 sayılı 65 Yaşını Doldurmuş Muhtaç, Kimsesiz ve Güçsüz Türk Vatandaşlarına Aylık Bağlanması Hakkında Kanun",
+      "administered_by": "Aile ve Sosyal Hizmetler Bakanlığı — Sosyal Yardımlar Genel Müdürlüğü",
       "criteria": {
         "min_age": 65,
-        "income_below_threshold": true
+        "income_limit_fraction_of_net_minimum_wage": 0.3333,
+        "income_limit_description": "Hanede kişi başına düşen ortalama aylık gelir, net asgari ücretin 1/3'ünden az olmalı",
+        "excludes": [
+          "SGK (SSK/Bağ-Kur/Emekli Sandığı) üzerinden gelir veya aylık alanlar",
+          "Nafaka bağlanmış olan veya bağlanması mümkün olanlar",
+          "Bir kurumda ücretsiz barınma/iaşe (yatılı bakım) hizmeti alanlar"
+        ]
       },
       "required_documents": [
-        "Nüfus cüzdanı fotokopisi",
-        "İkametgah belgesi",
-        "Gelir/mal beyan formu"
+        "TC kimlik numarası bulunan bir kimlik belgesi (nüfus cüzdanı veya TC kimlik kartı)"
       ],
       "steps": [
-        "e-Devlet üzerinden 'Sosyal Yardım Başvurusu' hizmetini bulun",
-        "Gelir/mal beyan formunu doldurun",
-        "İl/İlçe Sosyal Yardımlaşma Vakfı'na başvurun"
-      ]
+        "İkamet ettiğiniz yerdeki Sosyal Yardımlaşma ve Dayanışma Vakfı'na (SYDV) şahsen başvurun veya e-Devlet'te 'Yaşlı Aylığı Başvurusu' hizmetini arayın",
+        "Başvuru formunu doldurun (kimlik belgesi dışında ek belge gerekmez)",
+        "Vakıf/Valilik-Kaymakamlık tarafından muhtaçlık durumunuz sosyal inceleme ile değerlendirilir",
+        "Başvurunuz en geç 1 ay içinde sonuçlandırılır"
+      ],
+      "notes": "2026 Temmuz-Aralık dönemi aylık tutarı 7.257 TL'dir; tutar yılda iki kez memur maaş katsayısına göre güncellenir.",
+      "source": {
+        "title": "Aile ve Sosyal Hizmetler Bakanlığı — 2022 Sayılı Kanun Kapsamında Yürütülen Aylıklar",
+        "url": "https://www.aile.gov.tr/sss/sosyal-yardimlar-genel-mudurlugu/2022-kanun-kapsaminda-yurutulen-ayliklar/"
+      }
     },
     {
-      "name": "Evde Bakım / Engelli Bakım Ödeneği",
+      "id": "evde-bakim-odenegi",
+      "name": "Evde Bakım Ödeneği (Engelli Bakım Ödeneği)",
+      "legal_basis": "2828 sayılı Sosyal Hizmetler Kanunu",
+      "administered_by": "Aile ve Sosyal Hizmetler Bakanlığı — Engelli ve Yaşlı Hizmetleri Genel Müdürlüğü",
       "criteria": {
         "requires_disability_report": true,
-        "income_below_threshold": true
+        "disability_report_wording": "18 yaş üstü için sağlık kurulu raporunda 'ağır engelli' veya 'tam bağımlı' ibaresi bulunmalı",
+        "income_limit_fraction_of_net_minimum_wage": 0.6667,
+        "income_limit_description": "Hanede kişi başına düşen ortalama aylık gelir, net asgari ücretin 2/3'ünden az olmalı",
+        "requires_care_assessment": true
       },
       "required_documents": [
-        "Sağlık Kurulu (heyet) raporu",
-        "Nüfus cüzdanı fotokopisi",
-        "Gelir beyanı"
+        "Tam teşekküllü hastaneden alınmış, 'ağır engelli/tam bağımlı' ibareli sağlık kurulu (heyet) raporu",
+        "TC kimlik belgesi",
+        "Hane gelirini gösterir belgeler (varsa maaş bordrosu, emekli maaşı belgesi vb.)"
       ],
       "steps": [
-        "MHRS üzerinden hastaneden heyet raporu randevusu alın",
-        "Heyet raporunu aldıktan sonra Sosyal Hizmet Merkezi'ne başvurun"
-      ]
+        "MHRS üzerinden hastaneden sağlık kurulu (heyet) raporu için randevu alın",
+        "Raporda 'ağır engelli/tam bağımlı' ibaresi olduğundan emin olun",
+        "Raporla birlikte ikamet ettiğiniz ildeki Aile ve Sosyal Hizmetler İl Müdürlüğü veya Sosyal Hizmet Merkezi'ne başvurun",
+        "Bakım Hizmetleri Değerlendirme Heyeti evi ziyaret ederek bakım ihtiyacını yerinde değerlendirir",
+        "Uygun bulunursa ödeme, bakımı fiilen üstlenen kişiye (genelde aile bireyi) yapılır"
+      ],
+      "notes": "2026 Temmuz-Aralık dönemi ödeme tutarı 15.755 TL'dir.",
+      "source": {
+        "title": "Aile ve Sosyal Hizmetler Bakanlığı — Evde Bakım Yardımı ve Gündüz Hizmetleri",
+        "url": "https://www.aile.gov.tr/sss/engelli-ve-yasli-hizmetleri-genel-mudurlugu/evde-bakim-yardimi-ve-gunduz-hizmetleri/"
+      }
     },
     {
-      "name": "Ücretsiz Toplu Taşıma Kartı (65 Yaş Kartı)",
+      "id": "65-yas-ulasim-karti",
+      "name": "65 Yaş Üstü Ücretsiz Toplu Taşıma Kartı",
+      "legal_basis": "Ücretsiz veya İndirimli Seyahat Kartları Yönetmeliği (04.03.2014 tarih, 28931 sayılı Resmi Gazete)",
+      "administered_by": "Büyükşehir/il belediyeleri — ulusal tek bir program değildir, il bazında değişir",
       "criteria": {
-        "min_age": 65
+        "min_age": 65,
+        "citizenship": "T.C. vatandaşı",
+        "municipality_dependent": true
       },
       "required_documents": [
-        "Nüfus cüzdanı fotokopisi",
-        "Fotoğraf"
+        "Nüfus cüzdanı veya TC kimlik kartı (aslı)",
+        "1 adet vesikalık fotoğraf (bazı belediyelerde istenir; önceden ilgili belediyeyle teyit edin)"
       ],
       "steps": [
-        "Belediye ulaşım biriminden veya e-Devlet üzerinden başvurun"
-      ]
+        "Yaşadığınız ildeki belediyenin ulaşım kartı başvuru merkezine şahsen gidin (örn. İstanbul: İstanbulkart merkezleri, Ankara: Ankarakart/Başkentkart, İzmir: İzmirim Kart merkezleri)",
+        "Kimlik belgenizi ve varsa istenen fotoğrafı ibraz edin",
+        "Kartınız orada teslim edilir veya mevcut ulaşım kartınıza 65 yaş tanımı yüklenir"
+      ],
+      "notes": "Kart adı, başvuru yeri, gerekli belge ve kapsanan hatlar (metro/otobüs/vapur vb.) belediyeden belediyeye değişir. Kullanıcının hangi ilde/ilçede yaşadığı sorulmalı ve o belediyenin güncel prosedürüne yönlendirilmelidir; bu program listedeki diğer ikisi gibi tek bir ulusal kurumdan yürütülmez.",
+      "source": {
+        "title": "İBB İstanbulkart — 65 Yaş Üstü Ücretsiz Ulaşım Kartı Başvurusu",
+        "url": "https://www.trhaber.com/gundem/65-yas-ustu-ucretsiz-ulasim-karti-basvurusu-nasil-yapilir-istanbul-h957880.html"
+      }
     }
   ]
 }

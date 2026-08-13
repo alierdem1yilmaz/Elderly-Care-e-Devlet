@@ -1,8 +1,11 @@
-# Sahiplik: Kişi 1 (Backend Omurga) — endpoint iskeleti, şemayı değiştirmeden
-# içini gerçek orchestrator/subagent çağrılarıyla doldurun (bkz. TODO'lar).
+# Sahiplik: Kişi 1 (ali-erdem)
 #
 # Çalıştırma: uvicorn backend.main:app --reload --port 8000
 # (proje kök dizininden çalıştırın ki `backend.` importları çalışsın)
+# Not: claude-agent-sdk, sistemde giriş yapılmış bir `claude` CLI'ı kullanır —
+# her takım üyesinin kendi makinesinde `claude` ile giriş yapmış olması gerekir.
+
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,7 +14,17 @@ from pydantic import BaseModel
 from backend import state
 from backend.agents import orchestrator, tracking_agent, security_agent
 
-app = FastAPI(title="Yaşlı Bakım Rehberlik Asistanı")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await orchestrator.connect()
+    try:
+        yield
+    finally:
+        await orchestrator.disconnect()
+
+
+app = FastAPI(title="Yaşlı Bakım Rehberlik Asistanı", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -35,8 +48,8 @@ def ping():
 
 
 @app.post("/chat")
-def chat(req: ChatRequest):
-    return orchestrator.handle_message(req.message)
+async def chat(req: ChatRequest):
+    return await orchestrator.handle_message(req.message)
 
 
 @app.get("/case")
@@ -45,10 +58,11 @@ def get_case():
 
 
 @app.post("/case/status")
-def case_status(req: StatusUpdateRequest):
-    tracking_agent.handle_status_update(req.update)
-    state.add_notification("status_ack", f"Bildirdiğiniz durum kaydedildi: {req.update}")
-    return state.get_case()
+async def case_status(req: StatusUpdateRequest):
+    result = await orchestrator.handle_message(
+        f"(Kullanıcı bir durum bildiriyor, buna göre gerekirse bir hatırlatma kaydet) {req.update}"
+    )
+    return result["case"]
 
 
 @app.post("/scenario/missing-document")

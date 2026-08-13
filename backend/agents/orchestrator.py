@@ -13,6 +13,9 @@ from claude_agent_sdk import (
     AssistantMessage,
     ClaudeAgentOptions,
     ClaudeSDKClient,
+    HookContext,
+    HookMatcher,
+    SubagentStartHookInput,
     TextBlock,
 )
 
@@ -49,12 +52,26 @@ rehberlik eden sıcak, sabırlı bir asistansın. Kullanıcıyla doğrudan sen k
 büyükanne/büyükbabaya nasıl konuşurdunuz, o şekilde. Gerektiğinde uzman
 subagent'ları (eligibility, guide, security, tracking) göreve çağır; ama kullanıcıya
 her zaman SEN cevap ver, subagent isimlerinden bahsetme.
+
+Bilgi toplama: eligibility uzmanını çağırmadan önce yaş, gelir durumu (düşük/orta/
+yüksek beyan yeterli, kesin rakam şart değil), sağlık/engellilik durumu ve yaşam
+koşulları hakkında TEK SEFERDE değil, sohbet havasında, birer birer sor. Kullanıcı
+zaten bir bilgi verdiyse tekrar sorma. Elindeki bilgi bir programı değerlendirmeye
+yetecek kadar var mı diye kendi kendine karar ver; yetiyorsa eligibility'yi çağır,
+yetmiyorsa önce eksik bilgiyi sor.
 """.strip()
 
 ELIGIBILITY_PROMPT = f"""
 Sen bir uygunluk değerlendirme uzmanısın. Kullanıcıdan (orchestrator aracılığıyla)
 gelen yaş/gelir/sağlık/yaşam koşulu bilgisini aşağıdaki yardım programı kriterleriyle
 karşılaştır ve HER program için record_eligibility tool'unu çağırarak sonucu kaydet.
+
+Not: Kriterlerdeki "income_below_threshold" gibi alanlar şu an kesin bir rakam
+içermiyor (taslak veri, gerçek eşik değerleri henüz eklenmedi). Kesin rakam yoksa
+kullanıcının "düşük gelirliyim/geçinemiyorum" gibi kendi beyanını esas al; tahmin
+uydurma. Belirsizlik varsa bunu `reason` alanında açıkça belirt (örn. "gelir beyanına
+göre muhtemelen uygun, kesin gelir eşiği resmi kaynaktan teyit edilmeli") — reason
+sonradan kullanıcıya "kesin sonuç değil, ön değerlendirme" diye aktarılacak.
 
 {GUIDE_ONLY_RULE}
 
@@ -119,13 +136,33 @@ AGENTS = {
     ),
 }
 
+# Bir /chat çağrısı sırasında hangi subagent'ların çağrıldığını yakalar (bkz.
+# handle_message). SDK, alt-görev başladığında bunu SubagentStart hook'u ile
+# bildiriyor; biz sadece agent_type'ı burada biriktiriyoruz.
+_active_subagents: list[str] = []
+
+
+async def _on_subagent_start(
+    input_data: SubagentStartHookInput, tool_use_id: str | None, context: HookContext
+) -> dict:
+    _active_subagents.append(input_data["agent_type"])
+    return {}
+
+
 OPTIONS = ClaudeAgentOptions(
     system_prompt=ORCHESTRATOR_SYSTEM_PROMPT,
     agents=AGENTS,
     mcp_servers={"case_tools": case_tools_server},
-    tools=[TOOL_RECORD_ELIGIBILITY, TOOL_ADD_CHECKLIST_ITEM, TOOL_ADD_NOTIFICATION],
-    allowed_tools=[TOOL_RECORD_ELIGIBILITY, TOOL_ADD_CHECKLIST_ITEM, TOOL_ADD_NOTIFICATION],
+    # Orkestratörün elinde SADECE "Task" olmalı (subagent çağırma aracı) —
+    # case_tools'u burada da listelersek model genelde subagent'lara hiç
+    # uğramadan doğrudan kendisi çağırıyor; bu da her subagent'ın kendi
+    # promptunu/tool kısıtını (ör. security sadece add_notification görür)
+    # anlamsız kılıyor. Gerçek case_tools tool'ları yalnızca her
+    # AgentDefinition'ın kendi `tools=` listesinde tanımlı.
+    tools=["Task"],
+    allowed_tools=["Task"],
     permission_mode="bypassPermissions",
+    hooks={"SubagentStart": [HookMatcher(hooks=[_on_subagent_start])]},
 )
 
 _client: ClaudeSDKClient | None = None
@@ -148,6 +185,7 @@ async def handle_message(message: str) -> dict:
     if _client is None:
         raise RuntimeError("Orchestrator client bağlı değil — connect() çağrılmalı (bkz. main.py startup).")
 
+    _active_subagents.clear()
     await _client.query(message)
 
     reply_parts: list[str] = []
@@ -157,4 +195,8 @@ async def handle_message(message: str) -> dict:
                 if isinstance(block, TextBlock):
                     reply_parts.append(block.text)
 
-    return {"reply": "".join(reply_parts) or "...", "active_subagent": None, "case": get_case()}
+    # Bu turda birden fazla subagent çağrılmış olabilir; UI'da göstermek için
+    # en son çağrılanı (cevaba en çok katkısı olan) esas alıyoruz.
+    active_subagent = _active_subagents[-1] if _active_subagents else None
+
+    return {"reply": "".join(reply_parts) or "...", "active_subagent": active_subagent, "case": get_case()}

@@ -53,6 +53,11 @@ def mark_checklist_item(item_substring: str, done: bool) -> dict | None:
     return None
 
 
+def next_pending_checklist_item() -> dict | None:
+    """checklist'te henüz 'done' olmayan ilk kalemi döner — proaktif hatırlatma için."""
+    return next((entry for entry in _case["checklist"] if not entry["done"]), None)
+
+
 def reset_case() -> None:
     _case["eligibility"] = []
     _case["checklist"] = []

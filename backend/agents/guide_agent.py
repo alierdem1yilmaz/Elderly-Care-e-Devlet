@@ -34,6 +34,10 @@ def build_steps(program: str, benefits: list[dict] | None = None) -> str:
     for i, step in enumerate(match.get("steps", []), start=1):
         lines.append(f"{i}. {step}")
 
+    docs = match.get("required_documents", [])
+    if docs:
+        lines.append("Yanınızda bulundurmanız gereken belgeler: " + ", ".join(docs) + ".")
+
     admin = match.get("administered_by")
     if admin:
         lines.append(f"Bu programı yürüten kurum: {admin}")

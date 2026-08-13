@@ -1,0 +1,43 @@
+{
+  "_meta": {
+    "note": "Statik, doğrulanmış e-Devlet okuryazarlığı içeriği — chat'in o anki üretimine bırakılmaz.",
+    "last_verified": "2026-08-13"
+  },
+  "sections": [
+    {
+      "id": "nedir",
+      "title": "e-Devlet nedir?",
+      "body": "e-Devlet Kapısı, T.C. Cumhurbaşkanlığı Dijital Dönüşüm Ofisi tarafından işletilen resmi bir internet sitesidir (adresi: turkiye.gov.tr). Devletin sunduğu binlerce hizmete (sosyal yardım başvurusu, sağlık raporu, nüfus kaydı vb.) tek bir yerden, evinizden çıkmadan ulaşmanızı sağlar. Resmi ve güvenlidir; ama şifrenizi asla kimseyle paylaşmamalısınız."
+    },
+    {
+      "id": "giris-yontemleri",
+      "title": "Nasıl giriş yaparım?",
+      "body": "e-Devlet'e girmenin birkaç yolu var, size uygun olanı seçebilirsiniz:\n\n1. Şifre ile: Size özel bir e-Devlet şifreniz varsa, TC kimlik numaranız ve bu şifreyle girersiniz.\n2. Mobil imza ile: Cep telefonunuzun SIM kartına tanımlı özel bir imzadır, operatörünüzden (Turkcell, Vodafone, Türk Telekom) başvurabilirsiniz.\n3. e-İmza ile: Elektronik imza kartı olanlar için.\n4. T.C. Kimlik Kartı ile: Çipli yeni kimlik kartınızı bir kart okuyucuya okutarak girebilirsiniz.\n5. İnternet bankacılığı ile: Bazı bankaların uygulaması üzerinden de giriş yapılabilir.\n\nÇoğu kişi için en kolayı e-Devlet şifresidir."
+    },
+    {
+      "id": "sifre-unuttum",
+      "title": "Şifremi unuttum ya da hiç şifrem yok, ne yapmalıyım?",
+      "body": "En kolay ve güvenli yol: kimliğinizle birlikte herhangi bir PTT şubesine gitmek. Görevli, kimliğinizi kontrol edip size kapalı bir zarf içinde yeni şifrenizi verir. İnternet bankacılığınız veya mobil imzanız varsa, bunlarla e-Devlet'e girip oradan da yeni bir şifre oluşturabilirsiniz. Şifrenizi telefonla ya da SMS ile kimse sizden isteyemez — isteyen olursa dolandırıcıdır."
+    },
+    {
+      "id": "otp-kodu",
+      "title": "Telefonuma gelen kod (doğrulama kodu) nedir?",
+      "body": "Bazı işlemlerde güvenlik için telefonunuza kısa bir kod (SMS) gelir, buna \"iki aşamalı giriş\" denir — amacı hesabınızı sizden başka kimsenin kullanamamasını sağlamaktır. Bu kodu SADECE siz, e-Devlet'in kendi ekranına girersiniz. Bu kodu telefonda, SMS ile veya hiçbir şekilde başka biriyle paylaşmayın — e-Devlet çalışanları bile bu kodu sizden asla telefonla istemez."
+    },
+    {
+      "id": "hizmet-arama",
+      "title": "Bir hizmeti nasıl bulurum?",
+      "body": "e-Devlet'e girdikten sonra sayfanın en üstünde büyük bir arama kutusu görürsünüz. Örneğin \"Yaşlı Aylığı Başvurusu\" ya da \"65 Yaş Aylığı\" yazıp Enter'a basmanız yeterli — sistem ilgili hizmeti bulup size gösterir."
+    },
+    {
+      "id": "terimler-sozlugu",
+      "title": "Sık karşılaşılan terimler",
+      "body": "e-İmza: Kağıt üzerindeki imza gibi, elektronik belgeleri imzalamaya yarayan özel bir dijital anahtar.\nMobil İmza: Cep telefonu SIM kartınıza tanımlanan, e-imza yerine geçen kolay bir yöntem.\nKare Kod (QR Kod): Kareli bir desendir; telefonunuzdaki e-Devlet uygulamasıyla bu kodu okutarak bazı işlemleri onaylayabilirsiniz.\nKEP (Kayıtlı Elektronik Posta): Yasal olarak geçerli, resmi bir e-posta türü.\nBaşvuru Referans/Barkod Numarası: Yaptığınız bir başvuruyu daha sonra takip etmek için kullanılan numaradır, not almanız iyi olur."
+    },
+    {
+      "id": "dolandiricilik",
+      "title": "Dolandırıcılıktan nasıl korunurum?",
+      "body": "\"e-Devlet şifreniz güncellenmiştir, tıklayın\" ya da \"hesabınız kapatılacak, hemen bilgilerinizi girin\" gibi SMS/aramalar SAHTEDİR. Gerçek e-Devlet ya da bankalar sizden telefonla veya linkle şifre/kod istemez. Böyle bir mesaj alırsanız hiçbir linke tıklamayın, bilgi vermeyin; şüpheliyseniz bir aile üyenize danışın veya bu uygulamadaki Sohbet'e yazıp sorun."
+    }
+  ]
+}

@@ -1,133 +1,538 @@
-/* Sahiplik: Kişi 3 (Frontend & Demo) — yaşlı-dostu: büyük yazı, yüksek kontrast, sade */
+/* Sahiplik: Kişi 3 (Frontend & Demo) — yaşlı-dostu: büyük yazı, yüksek kontrast, sade.
+   Renk paleti: koyu lacivert / beyaz / siyah, vurgu için canlı mavi. */
+
+:root {
+  --navy-dark: #0b1f3a;
+  --navy: #14335c;
+  --blue-accent: #2563eb;
+  --blue-light: #dce8fb;
+  --white: #ffffff;
+  --off-white: #f2f5fa;
+  --black: #10131a;
+  --gray-border: #ccd4e0;
+  --red: #c1121f;
+  --base-font-size: 20px;
+}
 
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
   font-family: -apple-system, "Segoe UI", Arial, sans-serif;
-  font-size: 20px;
-  background: #f5f3ee;
-  color: #1a1a1a;
+  font-size: var(--base-font-size);
+  background: var(--off-white);
+  color: var(--black);
   display: flex;
   flex-direction: column;
   height: 100vh;
 }
 
+/* --- Header / marka --- */
 header {
-  background: #1f5c4a;
-  color: white;
-  padding: 16px 24px;
+  background: var(--white);
+  border-bottom: 3px solid var(--black);
+  padding: 18px 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
 }
 
-header h1 { font-size: 24px; margin: 0; }
+.brand { display: flex; align-items: center; gap: 14px; }
 
-nav button.tab-btn {
-  font-size: 18px;
-  padding: 10px 18px;
-  margin-left: 8px;
-  border: none;
-  border-radius: 8px;
-  background: #2f7d64;
-  color: white;
+.logo-badge {
+  background: var(--black);
+  color: var(--white);
+  font-weight: 900;
+  font-size: 22px;
+  width: 56px;
+  height: 56px;
+  min-width: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-left: 5px solid var(--blue-accent);
+}
+
+.brand-text h1 { margin: 0; font-size: 28px; letter-spacing: 1px; }
+.brand-black { color: var(--black); }
+.brand-blue { color: var(--blue-accent); text-decoration: underline; }
+.brand-subtitle { margin: 2px 0 0 0; font-size: 13px; letter-spacing: 1px; color: #556; font-weight: 700; }
+
+.brand-description {
+  margin: 0;
+  padding: 10px 24px;
+  background: var(--off-white);
+  border-bottom: 1px solid var(--gray-border);
+  color: #334;
+  font-size: 16px;
+  max-width: 900px;
+}
+
+.header-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+
+.font-size-control button {
+  font-size: 15px;
+  font-weight: bold;
+  padding: 8px 12px;
+  margin-left: 4px;
+  border: 2px solid var(--black);
+  border-radius: 0;
+  background: var(--white);
+  color: var(--black);
   cursor: pointer;
 }
-nav button.tab-btn.active { background: #ffb703; color: #1a1a1a; font-weight: bold; }
+.font-size-control button:hover { background: var(--blue-light); }
 
-main { flex: 1; overflow: hidden; padding: 20px; }
+.stat-box {
+  border: 2px solid var(--black);
+  padding: 8px 16px;
+  min-width: 140px;
+  text-align: left;
+}
+.stat-label { display: block; font-size: 11px; letter-spacing: 1px; color: #667; font-weight: 700; }
+.stat-value { display: block; font-size: 20px; font-weight: 900; color: var(--black); }
 
-.tab-panel { display: none; height: 100%; flex-direction: column; }
+/* --- Sekme navigasyonu: numaralı ikon kutuları --- */
+.tab-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  border-bottom: 3px solid var(--black);
+  background: var(--white);
+}
+
+button.tab-btn {
+  flex: 1 1 200px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 16px 14px;
+  border: 2px solid var(--black);
+  border-right: none;
+  background: var(--white);
+  color: var(--black);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+.tab-nav button.tab-btn:last-child { border-right: 2px solid var(--black); }
+button.tab-btn:hover { background: var(--blue-light); }
+button.tab-btn.active {
+  background: var(--black);
+  color: var(--white);
+  border-bottom: 4px solid var(--blue-accent);
+}
+.tab-icon { font-size: 18px; }
+
+.badge {
+  display: inline-block;
+  background: var(--red);
+  color: var(--white);
+  border-radius: 999px;
+  font-size: 12px;
+  padding: 1px 8px;
+  margin-left: 4px;
+}
+
+main { flex: 1; overflow-y: auto; padding: 24px; }
+
+.tab-panel { display: none; flex-direction: column; }
 .tab-panel.active { display: flex; }
 
+h2, h3 { color: var(--navy-dark); }
+
+/* --- Ajan tanıtım banner'ı --- */
+.agent-banner {
+  background: var(--black);
+  color: var(--white);
+  padding: 24px 28px;
+  border-left: 6px solid var(--blue-accent);
+  margin-bottom: 20px;
+}
+.agent-badge {
+  display: inline-block;
+  background: var(--blue-accent);
+  color: var(--white);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  padding: 4px 12px;
+  margin-bottom: 12px;
+}
+.agent-heading { color: var(--white); margin: 0 0 10px 0; font-size: 26px; letter-spacing: 0.5px; }
+.agent-desc { margin: 0; color: #d8dee8; font-size: calc(var(--base-font-size) * 0.8); line-height: 1.5; max-width: 800px; }
+
+/* --- Sıradaki Adım banner --- */
+.next-step-banner {
+  background: var(--blue-light);
+  border: 2px solid var(--blue-accent);
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  font-size: calc(var(--base-font-size) * 0.9);
+  font-weight: 600;
+  color: var(--navy-dark);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.next-step-icon { font-size: calc(var(--base-font-size) * 1.1); }
+
+/* --- İki kolonlu Sorgula & Eşleştir --- */
+.two-col { display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start; }
+.col-form { flex: 1 1 380px; }
+.col-results { flex: 1 1 380px; }
+
+#profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: var(--white);
+  border: 1px solid var(--gray-border);
+  padding: 20px;
+}
+#profile-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--navy-dark);
+  font-size: calc(var(--base-font-size) * 0.75);
+}
+#profile-form input, #profile-form select, #profile-form textarea {
+  font-size: calc(var(--base-font-size) * 0.9);
+  padding: 10px;
+  border-radius: 6px;
+  border: 2px solid var(--navy);
+  font-weight: normal;
+  color: var(--black);
+  background: var(--white);
+  font-family: inherit;
+}
+
+.checkbox-card {
+  flex-direction: row !important;
+  align-items: flex-start !important;
+  gap: 12px !important;
+  border: 2px solid var(--black);
+  border-radius: 6px;
+  padding: 14px 16px;
+  cursor: pointer;
+}
+.checkbox-card input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  margin-top: 2px;
+  flex: 0 0 auto;
+}
+.checkbox-card-text { display: flex; flex-direction: column; gap: 4px; }
+.checkbox-card-title {
+  font-weight: 800;
+  color: var(--navy-dark);
+  font-size: calc(var(--base-font-size) * 0.8);
+}
+.checkbox-card-desc {
+  font-weight: normal;
+  color: #556;
+  font-size: calc(var(--base-font-size) * 0.7);
+}
+
+.results-placeholder {
+  border: 2px dashed var(--gray-border);
+  border-radius: 6px;
+  padding: 40px 20px;
+  text-align: center;
+  color: #778;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.results-group-title { font-size: calc(var(--base-font-size) * 0.8); font-weight: 800; letter-spacing: 0.5px; margin: 18px 0 8px 0; }
+.results-group-title.eligible { color: #157a3c; }
+.results-group-title.not-eligible { color: #667; }
+
+.result-card {
+  background: var(--white);
+  border: 1px solid var(--gray-border);
+  border-left: 6px solid var(--blue-accent);
+  border-radius: 6px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+.result-card.not-eligible { border-left-color: var(--gray-border); opacity: 0.85; }
+.result-card .result-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.result-card .result-title { font-weight: 800; font-size: calc(var(--base-font-size) * 0.85); margin-bottom: 4px; }
+.result-card .result-reason { font-size: calc(var(--base-font-size) * 0.75); color: #445; }
+.result-card .result-notes { font-size: calc(var(--base-font-size) * 0.7); color: #557; margin-top: 6px; font-style: italic; }
+.read-aloud-btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 6px;
+  border: 1px solid var(--navy);
+  background: var(--white);
+  color: var(--navy-dark);
+  cursor: pointer;
+}
+.read-aloud-btn svg { width: 16px; height: 16px; fill: currentColor; }
+.read-aloud-btn:hover { background: var(--blue-light); }
+.read-aloud-btn.speaking {
+  background: var(--red);
+  border-color: var(--red);
+  color: var(--white);
+}
+
+/* --- e-Devlet Kılavuzu akordiyon --- */
+.accordion-item {
+  border: 1px solid var(--gray-border);
+  margin-bottom: 10px;
+  background: var(--white);
+}
+.accordion-header {
+  width: 100%;
+  text-align: left;
+  padding: 16px 18px;
+  font-size: calc(var(--base-font-size) * 0.9);
+  font-weight: 700;
+  color: var(--navy-dark);
+  background: var(--white);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.accordion-header:hover { background: var(--blue-light); }
+.accordion-header-title { flex: 1; text-align: left; }
+.accordion-body {
+  padding: 0 18px 18px 18px;
+  font-size: calc(var(--base-font-size) * 0.8);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  display: none;
+}
+.accordion-body-actions { margin-top: 10px; }
+.accordion-item.open .accordion-body { display: block; }
+.accordion-item.open .accordion-header { border-bottom: 1px solid var(--gray-border); }
+
+/* --- Sohbet --- */
 #chat-log {
   flex: 1;
   overflow-y: auto;
-  background: white;
+  background: var(--white);
   border-radius: 12px;
   padding: 16px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--gray-border);
+  min-height: 320px;
 }
 
-.msg { margin-bottom: 14px; padding: 12px 16px; border-radius: 12px; max-width: 75%; line-height: 1.4; }
-.msg.user { background: #ffe8b3; margin-left: auto; }
-.msg.assistant { background: #e4f0ec; margin-right: auto; }
+.msg {
+  margin-bottom: 14px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  max-width: 75%;
+  line-height: 1.5;
+  font-size: 1.1em;
+  white-space: pre-wrap;
+}
+.msg.user { background: var(--blue-light); color: var(--black); margin-left: auto; }
+.msg.assistant { background: var(--navy-dark); color: var(--white); margin-right: auto; }
 
-#chat-form { display: flex; gap: 10px; margin-top: 14px; }
+.voice-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 10px;
+  font-size: calc(var(--base-font-size) * 0.75);
+}
+.voice-toggle-label, .voice-select-label { display: flex; align-items: center; gap: 6px; }
+#voice-select {
+  font-size: calc(var(--base-font-size) * 0.7);
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--navy);
+  max-width: 220px;
+}
+.voice-controls button {
+  font-size: calc(var(--base-font-size) * 0.7);
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--navy);
+  background: var(--white);
+  color: var(--navy-dark);
+  cursor: pointer;
+}
+.voice-controls button:hover { background: var(--blue-light); }
+
+.mic-hint { font-weight: 600; color: var(--navy-dark); }
+.mic-status {
+  font-size: calc(var(--base-font-size) * 0.75);
+  color: var(--navy-dark);
+  background: var(--blue-light);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 0 0 10px 0;
+}
+
+/* .mic-btn hem #chat-form/#status-form içinde hem genel bir <button> olduğu için,
+   aşağıdaki genel "#chat-form button" kuralıyla specificity çakışması yaşamaması
+   adına burada özellikle güçlü/kapsamlı tanımlanıyor (bkz. genel buton kuralındaki
+   :not(.mic-btn) istisnası da). */
+button.mic-btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: calc(var(--base-font-size) * 0.65);
+  font-weight: 700;
+  width: auto;
+  height: auto;
+  padding: 10px 16px;
+  border: 2px solid var(--navy);
+  border-radius: 10px;
+  background: var(--white);
+  color: var(--navy-dark);
+  cursor: pointer;
+}
+button.mic-btn svg { width: 22px; height: 22px; flex: 0 0 auto; fill: currentColor; }
+button.mic-btn:hover { background: var(--blue-light); }
+button.mic-btn.listening {
+  background: var(--red);
+  border-color: var(--red);
+  color: var(--white);
+  animation: mic-pulse 1s infinite;
+}
+button.mic-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+@keyframes mic-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(193, 18, 31, 0.5); }
+  50% { box-shadow: 0 0 0 8px rgba(193, 18, 31, 0); }
+}
+
+#chat-form { display: flex; gap: 10px; margin-top: 10px; }
 #chat-input {
   flex: 1;
-  font-size: 20px;
+  font-size: var(--base-font-size);
   padding: 14px;
   border-radius: 10px;
-  border: 2px solid #1f5c4a;
+  border: 2px solid var(--navy);
 }
-#chat-form button {
-  font-size: 20px;
+#chat-form button:not(.mic-btn), #profile-form button, #status-form button:not(.mic-btn) {
+  font-size: calc(var(--base-font-size) * 0.95);
   padding: 14px 22px;
   border: none;
   border-radius: 10px;
-  background: #1f5c4a;
-  color: white;
+  background: var(--blue-accent);
+  color: var(--white);
   cursor: pointer;
 }
+#chat-form button:not(.mic-btn):hover, #profile-form button:hover, #status-form button:not(.mic-btn):hover { background: var(--navy); }
 
 .subagent-indicator {
-  font-size: 15px;
-  color: #1f5c4a;
-  background: #e4f0ec;
+  font-size: calc(var(--base-font-size) * 0.75);
+  color: var(--navy-dark);
+  background: var(--blue-light);
   border-radius: 8px;
   padding: 6px 12px;
   margin-bottom: 10px;
   align-self: flex-start;
 }
 
-.hint { font-size: 15px; color: #555; margin: -8px 0 12px 0; }
+.hint { font-size: calc(var(--base-font-size) * 0.75); color: #445; margin: -4px 0 16px 0; }
 
-#status-form { display: flex; gap: 10px; margin-bottom: 12px; }
+#status-form { display: flex; gap: 10px; margin-bottom: 20px; }
 #status-input {
   flex: 1;
-  font-size: 18px;
+  font-size: calc(var(--base-font-size) * 0.9);
   padding: 12px;
   border-radius: 10px;
-  border: 2px solid #1f5c4a;
-}
-#status-form button {
-  font-size: 18px;
-  padding: 12px 20px;
-  border: none;
-  border-radius: 10px;
-  background: #1f5c4a;
-  color: white;
-  cursor: pointer;
+  border: 2px solid var(--navy);
 }
 
 .card-list { list-style: none; padding: 0; margin: 0 0 24px 0; }
 .card-list li {
-  background: white;
-  border: 1px solid #ddd;
+  background: var(--white);
+  border: 1px solid var(--gray-border);
   border-radius: 10px;
   padding: 14px 18px;
   margin-bottom: 10px;
 }
 .card-list li.done { text-decoration: line-through; color: #888; }
-.card-list li.security_alert { border-left: 6px solid #d62828; }
-.card-list li.reminder { border-left: 6px solid #ffb703; }
+
+.checklist-item-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.checklist-item-text { flex: 1; }
+.checklist-item-tip {
+  margin-top: 6px;
+  font-size: calc(var(--base-font-size) * 0.7);
+  color: #557;
+}
+.checklist-item-tip::before { content: "💡 "; }
+.mark-ready-btn {
+  flex: 0 0 auto;
+  font-size: 13px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #157a3c;
+  background: var(--white);
+  color: #157a3c;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.mark-ready-btn:hover { background: #e6f5ec; }
+.card-list li.done .mark-ready-btn { display: none; }
+
+/* --- Bildirimler: SMS balonu görünümü --- */
+.sms-list { list-style: none; padding: 0; margin: 0 0 24px 0; max-width: 520px; }
+.sms-list li {
+  background: var(--white);
+  border: 1px solid var(--gray-border);
+  border-radius: 16px;
+  border-top-left-radius: 4px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  position: relative;
+}
+.sms-list li::before { content: "📱 "; }
+.sms-list li.security_alert { border-left: 6px solid var(--red); background: #fdecec; }
+.sms-list li.reminder { border-left: 6px solid var(--blue-accent); background: var(--blue-light); }
+
+.emergency-strip {
+  background: var(--navy);
+  color: var(--white);
+  padding: 8px 20px;
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  font-size: 14px;
+}
 
 footer {
-  background: #eee;
+  background: var(--off-white);
+  border-top: 1px solid var(--gray-border);
   padding: 10px 20px;
   display: flex;
   align-items: center;
   gap: 10px;
   font-size: 14px;
 }
-.demo-label { color: #666; }
+.demo-label { color: #556; }
 footer button {
   font-size: 14px;
   padding: 6px 12px;
   border-radius: 6px;
-  border: 1px solid #999;
-  background: white;
+  border: 1px solid var(--navy);
+  background: var(--white);
+  color: var(--navy-dark);
   cursor: pointer;
 }
+footer button:hover { background: var(--blue-light); }

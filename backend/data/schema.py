@@ -19,6 +19,7 @@ class BenefitCriteria(BaseModel):
     requires_disability_report: bool | None = None
     disability_report_wording: str | None = None
     requires_care_assessment: bool | None = None
+    min_disability_percentage: int | None = None
     citizenship: str | None = None
     municipality_dependent: bool | None = None
 

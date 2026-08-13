@@ -24,20 +24,53 @@ from backend.state import (
 
 _DATE_RE = re.compile(r"(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})")
 
+# Yaşlı kullanıcılar tarihi çoğunlukla "15 Ağustos" gibi ay ismiyle söyler,
+# "15.08.2026" gibi rakamla değil — bu yüzden ay isimlerini de tanımak şart.
+_TURKISH_MONTHS = {
+    "ocak": 1, "şubat": 2, "subat": 2, "mart": 3, "nisan": 4,
+    "mayıs": 5, "mayis": 5, "haziran": 6, "temmuz": 7,
+    "ağustos": 8, "agustos": 8, "eylül": 9, "eylul": 9,
+    "ekim": 10, "kasım": 11, "kasim": 11, "aralık": 12, "aralik": 12,
+}
+_TURKISH_DATE_RE = re.compile(
+    r"(\d{1,2})\s*(" + "|".join(_TURKISH_MONTHS.keys()) + r")(?:\s+(\d{4}))?",
+)
+
 
 def _extract_date(text: str) -> date | None:
-    if "yarın" in text.casefold():
+    lowered = text.casefold()
+
+    if "bugün" in lowered or "bugun" in lowered:
+        return date.today()
+    if "yarın" in lowered or "yarin" in lowered:
         return date.today() + timedelta(days=1)
+
     match = _DATE_RE.search(text)
-    if not match:
-        return None
-    day, month, year = (int(g) for g in match.groups())
-    if year < 100:
-        year += 2000
-    try:
-        return date(year, month, day)
-    except ValueError:
-        return None
+    if match:
+        day, month, year = (int(g) for g in match.groups())
+        if year < 100:
+            year += 2000
+        try:
+            return date(year, month, day)
+        except ValueError:
+            return None
+
+    match = _TURKISH_DATE_RE.search(lowered)
+    if match:
+        day = int(match.group(1))
+        month = _TURKISH_MONTHS[match.group(2)]
+        year = int(match.group(3)) if match.group(3) else date.today().year
+        try:
+            candidate = date(year, month, day)
+        except ValueError:
+            return None
+        if match.group(3) is None and candidate < date.today():
+            # Yıl söylenmediyse ve bu tarih bu yıl için geçmişte kaldıysa,
+            # kullanıcı büyük olasılıkla gelecek yılı kastediyordur.
+            candidate = date(year + 1, month, day)
+        return candidate
+
+    return None
 
 
 _APPLIED_SIGNALS = ["başvurdum", "başvuru yaptım", "gönderdim"]
@@ -100,6 +133,16 @@ def handle_status_update(update_text: str) -> str:
             )
             add_notification("status_update", message)
             return message
+
+        # Tarih yok — "bir randevu aldım" gibi belirsiz bir mesajı sessizce
+        # atlamak yerine hedefe yönelik bir netleştirme sorusu dön; kullanıcı
+        # tarihi söylediğinde yukarıdaki dallanma gerçek bir appointment kaydeder.
+        message = (
+            "Randevunuzu not aldım ama tarihini anlayamadım — hangi tarihte? "
+            "(örn. 20.08.2026 ya da \"yarın\" diyebilirsiniz.)"
+        )
+        add_notification("status_update", message)
+        return message
 
     if any(sig in lowered for sig in _APPLIED_SIGNALS):
         message = (

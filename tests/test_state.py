@@ -9,12 +9,20 @@ from backend import state
 
 def test_load_benefits_returns_validated_programs():
     benefits = state.load_benefits()
-    assert len(benefits) == 3
+    assert len(benefits) == 4
     for program in benefits:
         assert program["name"]
         assert program["required_documents"]
         assert program["steps"]
         assert program["source"]["url"].startswith("http")
+
+
+def test_load_edevlet_guide_returns_sections_with_title_and_body():
+    sections = state.load_edevlet_guide()
+    assert len(sections) >= 5
+    for section in sections:
+        assert section["title"]
+        assert section["body"]
 
 
 def test_mark_checklist_item_matches_substring_and_toggles_done():
@@ -72,6 +80,35 @@ def test_get_case_no_reminder_for_far_appointment():
     case = state.get_case()
 
     assert case["notifications"] == []
+
+
+def test_next_step_prompts_profile_when_nothing_else_pending():
+    assert "Sorgula" in state.get_next_step()
+
+
+def test_next_step_prefers_soon_appointment_over_checklist():
+    soon = (date.today() + timedelta(days=2)).isoformat()
+    state.add_appointment("Heyet raporu randevusu", soon)
+    state.set_checklist([{"item": "Nüfus cüzdanı fotokopisi", "done": False}])
+
+    assert "Heyet raporu randevusu" in state.get_next_step()
+
+
+def test_next_step_falls_back_to_pending_checklist_item():
+    state.set_checklist([{"item": "Nüfus cüzdanı fotokopisi", "done": False}])
+
+    assert "Nüfus cüzdanı fotokopisi" in state.get_next_step()
+
+
+def test_next_step_says_nothing_pending_when_all_done():
+    state.set_profile({"age": 70})
+    state.set_checklist([{"item": "Nüfus cüzdanı fotokopisi", "done": True}])
+
+    assert "bekleyen bir işleminiz yok" in state.get_next_step()
+
+
+def test_get_case_includes_next_step_field():
+    assert "next_step" in state.get_case()
 
 
 def test_get_case_does_not_repeat_reminder_on_second_call():

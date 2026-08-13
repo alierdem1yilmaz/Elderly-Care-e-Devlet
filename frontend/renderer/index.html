@@ -2,49 +2,243 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8" />
-<title>Yaşlı Bakım Rehberlik Asistanı</title>
+<title>Bakım Rehber</title>
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header>
-    <h1>🤝 Bakım Rehberlik Asistanı</h1>
-    <nav>
-      <button class="tab-btn active" data-tab="chat">Sohbet</button>
-      <button class="tab-btn" data-tab="guide">Rehber</button>
-      <button class="tab-btn" data-tab="family">Aile Görünümü</button>
-    </nav>
+    <div class="brand">
+      <div class="logo-badge">BR</div>
+      <div class="brand-text">
+        <h1><span class="brand-black">BAKIM</span> <span class="brand-blue">REHBER</span></h1>
+        <p class="brand-subtitle">SÜREÇ TAKİP VE PROAKTİF AİLE BİLGİLENDİRME SİSTEMİ</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="font-size-control" title="Yazı boyutu">
+        <button id="font-decrease-btn" type="button" aria-label="Yazıyı küçült">A−</button>
+        <button id="font-increase-btn" type="button" aria-label="Yazıyı büyüt">A+</button>
+      </div>
+      <div class="stat-box">
+        <span class="stat-label">EŞLEŞEN HAK</span>
+        <span class="stat-value" id="stat-matched-rights">0 KALEM</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-label">AKTİF TAKİP</span>
+        <span class="stat-value" id="stat-active-tracking">0 BAŞVURU</span>
+      </div>
+    </div>
   </header>
 
+  <p class="brand-description">Yaşlılarımızın sosyal haklarını keşfetmesini, e-Devlet'i güvenle öğrenmesini ve başvuru sürecini adım adım takip etmesini sağlayan, yapay zeka destekli rehberlik sistemi.</p>
+
+  <nav class="tab-nav">
+    <button class="tab-btn active" data-tab="query">
+      <span class="tab-icon">✨</span> <span class="tab-label">1. SORGULA &amp; EŞLEŞTİR</span>
+    </button>
+    <button class="tab-btn" data-tab="edevlet">
+      <span class="tab-icon">🔒</span> <span class="tab-label">2. E-DEVLET KILAVUZU</span>
+    </button>
+    <button class="tab-btn" data-tab="tracking">
+      <span class="tab-icon">🔔</span> <span class="tab-label">3. SÜREÇ TAKİBİ &amp; SMS</span> <span id="family-badge" class="badge" hidden>0</span>
+    </button>
+    <button class="tab-btn" data-tab="chat">
+      <span class="tab-icon">🎙️</span> <span class="tab-label">SESLİ ASİSTAN SOHBETİ</span>
+    </button>
+  </nav>
+
   <main>
-    <section id="tab-chat" class="tab-panel active">
-      <div id="active-subagent-indicator" class="subagent-indicator" hidden></div>
-      <div id="chat-log"></div>
-      <form id="chat-form">
-        <input id="chat-input" type="text" placeholder="Buraya yazın..." autocomplete="off" />
-        <button type="submit">Gönder</button>
-      </form>
+    <section id="tab-query" class="tab-panel active">
+      <div class="agent-banner">
+        <span class="agent-badge">AJAN 01: SORGULAMA HEYETİ</span>
+        <h2 class="agent-heading">HAK SORGULAMA VE UYGUNLUK DENETLEYİCİSİ</h2>
+        <p class="agent-desc">Yaş, hane geliri, sağlık ve sosyal güvence durumunuza ait temel bilgileri aşağıya girerek hak ettiğiniz sosyal yardımları, aylıkları ve ücretsiz seyahat kartlarını anında sorgulayın. Sistemimiz tüm kriterleri gerçek T.C. mevzuatına göre analiz eder.</p>
+      </div>
+
+      <div id="next-step-banner" class="next-step-banner" hidden>
+        <span class="next-step-icon">👉</span>
+        <span id="next-step-text"></span>
+      </div>
+
+      <div class="two-col">
+        <div class="col-form">
+          <h3>👤 Bireysel Durum Bilgileri</h3>
+          <form id="profile-form">
+            <label>
+              Yaşınız
+              <input id="profile-age" type="number" min="0" max="120" required />
+            </label>
+            <label>
+              Engellilik durumunuz
+              <select id="profile-disability">
+                <option value="none">Yok</option>
+                <option value="unreported">Var, ama sağlık kurulu raporum yok</option>
+                <option value="reported">Var, sağlık kurulu raporum var</option>
+              </select>
+            </label>
+            <label>
+              Ne kadar yardıma ihtiyacınız var? (raporunuzdaki tam yüzdeyi bilmiyorsanız buradan seçin)
+              <select id="profile-disability-severity">
+                <option value="">Seçiniz / bilmiyorum</option>
+                <option value="25">Hafif — günlük işlerimi çoğunlukla kendim yapabiliyorum</option>
+                <option value="55">Orta — bazı işler için yardıma ihtiyacım var</option>
+                <option value="80">Ağır — çoğu işte yardıma muhtacım</option>
+              </select>
+            </label>
+            <label>
+              Raporunuzda yazan tam yüzdeyi biliyorsanız buraya yazabilirsiniz (isteğe bağlı, yukarıdakinden daha doğrudur)
+              <input id="profile-disability-percent" type="number" min="0" max="100" />
+            </label>
+            <label>
+              Aylık toplam hane geliriniz (TL, yaklaşık — biliyorsanız çok daha doğru sonuç verir)
+              <input id="profile-household-income" type="number" min="0" placeholder="Örn: 20000" />
+            </label>
+            <label>
+              Hanede kaç kişi yaşıyor?
+              <input id="profile-household-size" type="number" min="1" placeholder="Örn: 2" />
+            </label>
+            <label>
+              Gelir durumunuz (yukarıdaki TL bilgisini girmediyseniz bu kullanılır)
+              <select id="profile-income">
+                <option value="none">Hiç gelirim yok</option>
+                <option value="below_minimum">Asgari ücretin altında</option>
+                <option value="around_minimum">Asgari ücrete yakın</option>
+                <option value="above_minimum">Asgari ücretin üstünde</option>
+              </select>
+            </label>
+            <label>
+              Yaşadığınız il
+              <input id="profile-city" type="text" placeholder="Örn: İstanbul" />
+            </label>
+            <label>
+              Kiminle yaşıyorsunuz?
+              <select id="profile-living">
+                <option value="alone">Yalnız</option>
+                <option value="spouse">Eşimle</option>
+                <option value="family">Çocuğum/torunumla</option>
+                <option value="other">Diğer</option>
+              </select>
+            </label>
+            <label>
+              Barınma durumu
+              <select id="profile-housing">
+                <option value="">Belirtmek istemiyorum</option>
+                <option value="own">Kendi evinde oturuyor</option>
+                <option value="rent">Kirada oturuyor</option>
+                <option value="family_home">Aile yanında kalıyor</option>
+                <option value="other">Diğer</option>
+              </select>
+            </label>
+
+            <label class="checkbox-card">
+              <input type="checkbox" id="profile-needs-care" />
+              <span class="checkbox-card-text">
+                <span class="checkbox-card-title">💙 Günlük bakım ve refakat ihtiyacı var</span>
+                <span class="checkbox-card-desc">Yemek yeme, giyinme, tuvalet gibi ihtiyaçlarında bir başkasının yardımına ihtiyaç duyuyor.</span>
+              </span>
+            </label>
+
+            <label class="checkbox-card">
+              <input type="checkbox" id="profile-has-social-security" />
+              <span class="checkbox-card-text">
+                <span class="checkbox-card-title">🛡️ Aktif sosyal güvencesi var (SGK/maaş)</span>
+                <span class="checkbox-card-desc">Kendisine ait düzenli emeklilik aylığı, SSK, Bağ-Kur veya dul/yetim maaşı bulunuyor.</span>
+              </span>
+            </label>
+
+            <label>
+              Ek notlar / durumunuzu kendi cümlelerinizle anlatın (isteğe bağlı)
+              <textarea id="profile-notes" rows="3" placeholder="Örn: Annem yalnız yaşıyor, astım hastası ve merdiven inip çıkmakta zorlanıyor."></textarea>
+            </label>
+
+            <button type="submit">Haklarımı Göster</button>
+          </form>
+        </div>
+        <div class="col-results">
+          <div id="results-placeholder" class="results-placeholder">
+            Bilgilerinizi girip "Haklarımı Göster"e bastığınızda, size özel sonuçlar burada görünecek.
+          </div>
+          <div id="profile-results"></div>
+        </div>
+      </div>
     </section>
 
-    <section id="tab-guide" class="tab-panel">
-      <h2>Uygunluk Sonuçları</h2>
-      <ul id="eligibility-list" class="card-list"></ul>
-      <h2>Yapılacaklar Listesi</h2>
+    <section id="tab-edevlet" class="tab-panel">
+      <div class="agent-banner">
+        <span class="agent-badge">AJAN 02: DİJİTAL OKURYAZARLIK REHBERİ</span>
+        <h2 class="agent-heading">E-DEVLET KILAVUZU VE GÜVENLİK DANIŞMANI</h2>
+        <p class="agent-desc">e-Devlet'in ne olduğunu, nasıl giriş yapacağınızı ve dolandırıcılıktan nasıl korunacağınızı adım adım öğrenin. Bu bilgiler sabit ve doğrulanmış kaynaklardan hazırlanmıştır.</p>
+      </div>
+      <div id="edevlet-guide-list" class="accordion"></div>
+    </section>
+
+    <section id="tab-tracking" class="tab-panel">
+      <div class="agent-banner">
+        <span class="agent-badge">AJAN 03: TAKİP HEYETİ</span>
+        <h2 class="agent-heading">SÜREÇ TAKİBİ VE AİLE BİLGİLENDİRME MERKEZİ</h2>
+        <p class="agent-desc">Başvuru sürecinizdeki belgeleri, randevuları ve son tarihleri takip eder; eksik bir şey olduğunda ya da bir tarih yaklaştığında size (ve aile panelinize) proaktif olarak haber verir.</p>
+      </div>
+
+      <h3>📋 Belgelerim ve Yapılacaklar</h3>
+      <p class="hint">Her belgenin altında "nasıl temin ederim" ipucu var; hazırladığınızda tek tıkla işaretleyebilirsiniz.</p>
       <ul id="checklist-list" class="card-list"></ul>
-      <h2>Durum Bildir</h2>
+
+      <h3>Randevular / Son Tarihler</h3>
+      <ul id="appointments-list" class="card-list"></ul>
+
+      <h3>Durum Bildir</h3>
       <p class="hint">Bir belgeyi aldınız mı, bulamadınız mı ya da bir randevu mu aldınız? Buradan bildirin.</p>
       <form id="status-form">
+        <button type="button" id="status-mic-btn" class="mic-btn" title="Konuşarak yazın">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3.5 3.5 0 0 0 3.5-3.5v-5a3.5 3.5 0 0 0-7 0v5A3.5 3.5 0 0 0 12 15z"/><path d="M18.5 11.5a1 1 0 0 0-2 0 4.5 4.5 0 0 1-9 0 1 1 0 0 0-2 0 6.5 6.5 0 0 0 5.75 6.46V20H9a1 1 0 0 0 0 2h6a1 1 0 0 0 0-2h-2.25v-2.04A6.5 6.5 0 0 0 18.5 11.5z"/></svg>
+          <span class="mic-btn-label">Konuş</span>
+        </button>
         <input id="status-input" type="text" placeholder="Örn: Nüfus cüzdanı fotokopisini aldım" autocomplete="off" />
         <button type="submit">Bildir</button>
       </form>
+
+      <h3>📩 Bildirimler</h3>
+      <ul id="notifications-list" class="sms-list"></ul>
     </section>
 
-    <section id="tab-family" class="tab-panel">
-      <h2>Randevular / Son Tarihler</h2>
-      <ul id="appointments-list" class="card-list"></ul>
-      <h2>Bildirimler</h2>
-      <ul id="notifications-list" class="card-list"></ul>
+    <section id="tab-chat" class="tab-panel">
+      <div class="agent-banner">
+        <span class="agent-badge">AJAN 04: SESLİ DANIŞMANLIK ASİSTANI</span>
+        <h2 class="agent-heading">SESLİ VE YAZILI SOHBET DANIŞMANI</h2>
+        <p class="agent-desc">Aklınıza takılan her şeyi buraya yazabilir ya da söyleyebilirsiniz — sade bir dille, sabırla cevap verir.</p>
+      </div>
+      <div id="active-subagent-indicator" class="subagent-indicator" hidden></div>
+      <div id="chat-log"></div>
+      <div class="voice-controls">
+        <label class="voice-toggle-label">
+          <input type="checkbox" id="voice-toggle" checked /> 🔊 Sesli yanıt
+        </label>
+        <label class="voice-select-label">
+          Ses:
+          <select id="voice-select"></select>
+        </label>
+        <button type="button" id="replay-voice-btn">🔁 Tekrar Oku</button>
+        <button type="button" id="stop-voice-btn">⏹ Sesi Durdur</button>
+      </div>
+      <p class="hint mic-hint">🎤 Yazmakta zorlanıyorsanız, "Konuş" butonuna basıp derdinizi cihaza anlatabilirsiniz; bitirince butona tekrar basın — söyledikleriniz otomatik olarak yazıya çevrilir.</p>
+      <p id="mic-status" class="mic-status" hidden></p>
+      <form id="chat-form">
+        <button type="button" id="mic-btn" class="mic-btn" title="Konuşarak yazın">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3.5 3.5 0 0 0 3.5-3.5v-5a3.5 3.5 0 0 0-7 0v5A3.5 3.5 0 0 0 12 15z"/><path d="M18.5 11.5a1 1 0 0 0-2 0 4.5 4.5 0 0 1-9 0 1 1 0 0 0-2 0 6.5 6.5 0 0 0 5.75 6.46V20H9a1 1 0 0 0 0 2h6a1 1 0 0 0 0-2h-2.25v-2.04A6.5 6.5 0 0 0 18.5 11.5z"/></svg>
+          <span class="mic-btn-label">Konuş</span>
+        </button>
+        <input id="chat-input" type="text" placeholder="Buraya yazın ya da mikrofona konuşun..." autocomplete="off" />
+        <button type="submit">Gönder</button>
+      </form>
     </section>
   </main>
+
+  <div class="emergency-strip">
+    <strong>Acil / Yardım Hatları:</strong>
+    <span>📞 Alo 170 (SGK)</span>
+    <span>📞 Alo 189 (Engelli ve Yaşlı Hattı)</span>
+    <span>📞 Alo 184 (Sağlık Bakanlığı)</span>
+  </div>
 
   <footer>
     <span class="demo-label">Demo Senaryoları:</span>

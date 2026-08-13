@@ -93,6 +93,41 @@ def test_appointment_date_extraction_yarin_keyword():
     assert appointments[0]["due_date"] == (date.today() + timedelta(days=1)).isoformat()
 
 
+def test_appointment_date_extraction_turkish_month_name():
+    # Yaşlı kullanıcılar tarihi genelde "15 Ağustos" gibi söyler, "15.08.2026" değil.
+    tracking_agent.handle_status_update("randevumu 15 Ağustos tarihine aldım")
+
+    appointments = state.get_case()["appointments"]
+    assert len(appointments) == 1
+    assert appointments[0]["due_date"].endswith("-08-15")
+
+
+def test_appointment_date_extraction_turkish_month_name_with_year():
+    tracking_agent.handle_status_update("randevum 15 ağustos 2026")
+
+    appointments = state.get_case()["appointments"]
+    assert appointments[0]["due_date"] == "2026-08-15"
+
+
+def test_appointment_date_extraction_turkish_month_rolls_to_next_year_if_past():
+    # Yıl belirtilmemiş ve bu yıl için ay/gün geçmişte kaldıysa, gelecek yıla yuvarlanmalı.
+    tracking_agent.handle_status_update("randevum 5 Ocak")
+
+    appointments = state.get_case()["appointments"]
+    due = date.fromisoformat(appointments[0]["due_date"])
+    if date(date.today().year, 1, 5) < date.today():
+        assert due.year == date.today().year + 1
+    else:
+        assert due.year == date.today().year
+
+
+def test_appointment_without_date_asks_clarifying_question():
+    message = tracking_agent.handle_status_update("Bir randevu aldım")
+
+    assert "tarih" in message.casefold()
+    assert state.get_case()["appointments"] == []
+
+
 def test_far_future_appointment_does_not_trigger_immediate_reminder():
     far = (date.today() + timedelta(days=30)).strftime("%d.%m.%Y")
 

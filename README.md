@@ -29,6 +29,8 @@ cd frontend && npm start
 
 (`frontend/main.js` backend'i otomatik başlatmayı dener ama en güvenilir yöntem, geliştirme sırasında backend'i ayrı bir terminalde elle çalıştırmaktır.)
 
+> 🎤 **Mikrofon/sesli yazma:** Backend ilk açılışta yerel bir Whisper modeli indirir (~150MB, `base` boyutu) — bu yüzden **ilk `uvicorn` başlatma internet ister ve biraz sürebilir** (sonraki açılışlar hızlıdır, model önbelleğe alınır). Demo öncesi herkes en az bir kere backend'i çalıştırıp bu indirmeyi tamamlamış olmalı, sahne üstü sürprizle karşılaşılmasın.
+
 ## Görev Dağılımı (3 kişi)
 
 | Kişi | Branch | Kapsam |

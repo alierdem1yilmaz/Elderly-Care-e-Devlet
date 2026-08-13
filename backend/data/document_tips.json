@@ -1,0 +1,15 @@
+{
+  "_meta": {
+    "note": "Checklist'teki belge adlarıyla anahtar kelime eşleşmesi yapılır (bkz. frontend renderer.js). 'Guide-only' ilkesiyle tutarlı: sadece nasıl temin edileceğini anlatır, hiçbir işlemi kullanıcı adına yapmaz."
+  },
+  "tips": [
+    { "match": "nüfus cüzdanı", "tip": "Nüfus cüzdanınızın veya TC kimlik kartınızın fotokopisini yanınızda bulundurmanız yeterlidir; ayrıca bir yere gitmenize gerek yoktur." },
+    { "match": "kimlik", "tip": "TC kimlik kartınızın kendisini veya fotokopisini yanınıza alın." },
+    { "match": "sağlık kurulu", "tip": "Bir devlet hastanesine gidip 'sağlık kurulu raporu istiyorum' demeniz yeterlidir; hastane sizi ilgili bölümlere yönlendirir, birkaç saat sürebilir." },
+    { "match": "heyet raporu", "tip": "MHRS üzerinden ya da doğrudan hastaneye giderek bir 'sağlık kurulu' randevusu alın; işlem genelde birkaç saat sürer." },
+    { "match": "ikametgah", "tip": "İkametgah belgesini e-Devlet üzerinden ücretsiz yazdırabilir, ya da Nüfus Müdürlüğü'ne giderek alabilirsiniz." },
+    { "match": "gelir", "tip": "Çalışıyorsanız işvereninizden bir gelir belgesi/bordro isteyin; emekliyseniz e-Devlet'ten emekli maaşı belgesini yazdırabilirsiniz; hiç geliriniz yoksa bunu SYDV görevlisine sözlü olarak beyan etmeniz genelde yeterlidir." },
+    { "match": "fotoğraf", "tip": "Yakın tarihli, sıradan bir vesikalık fotoğraf yeterlidir; birçok fotoğrafçı bu boyutu zaten bilir." }
+  ],
+  "default_tip": "Bu belge için ilgili kurumdan (SYDV, Nüfus Müdürlüğü veya hastane) nasıl temin edeceğinizi sorabilir, ya da Sohbet sekmesinden bana danışabilirsiniz."
+}

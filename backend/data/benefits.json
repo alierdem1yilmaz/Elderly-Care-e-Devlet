@@ -66,6 +66,37 @@
       }
     },
     {
+      "id": "engelli-maasi",
+      "name": "Engelli Maaşı (Engelli Aylığı)",
+      "legal_basis": "2022 sayılı 65 Yaşını Doldurmuş Muhtaç, Kimsesiz ve Güçsüz Türk Vatandaşlarına Aylık Bağlanması Hakkında Kanun (engelli aylığı hükümleri)",
+      "administered_by": "Aile ve Sosyal Hizmetler Bakanlığı — Sosyal Yardımlar Genel Müdürlüğü",
+      "criteria": {
+        "requires_disability_report": true,
+        "min_disability_percentage": 40,
+        "income_limit_fraction_of_net_minimum_wage": 0.3333,
+        "income_limit_description": "Hanede kişi başına düşen ortalama aylık gelir, net asgari ücretin 1/3'ünden az olmalı",
+        "excludes": [
+          "SGK (SSK/Bağ-Kur/Emekli Sandığı) üzerinden gelir veya aylık alanlar"
+        ]
+      },
+      "required_documents": [
+        "Engel oranını gösteren sağlık kurulu raporu (%40 ve üzeri)",
+        "TC kimlik belgesi",
+        "Hane gelirini gösterir belgeler (varsa)"
+      ],
+      "steps": [
+        "Tam teşekküllü bir hastaneden 'Engelli Sağlık Kurulu Raporu' alın (bu rapor engel oranınızı belirler)",
+        "İkamet ettiğiniz yerdeki Sosyal Yardımlaşma ve Dayanışma Vakfı'na (SYDV) şahsen başvurun veya e-Devlet'te 'Engelli Aylığı Başvurusu' hizmetini arayın",
+        "Muhtaçlık durumunuz sosyal inceleme ile değerlendirilir",
+        "Başvurunuz en geç 1 ay içinde sonuçlandırılır"
+      ],
+      "notes": "2026 Temmuz-Aralık dönemi tutarı: engel oranı %40-69 arası için 5.793,31 TL, %70 ve üzeri için 8.689,97 TL. Bu program, 65 Yaş Üstü Aylığı ve Evde Bakım Ödeneği'nden farklı ayrı bir programdır; yaş şartı yoktur, 18 yaş üstü herkes başvurabilir.",
+      "source": {
+        "title": "Engellilere ve yaşlılara yapılan sosyal yardımlar ve tutarları",
+        "url": "https://www.yenisafak.com/yazarlar/ahmet-unlu/engellilere-ve-yaslilara-yapilan-sosyal-yardimlar-ve-tutarlari-4844852"
+      }
+    },
+    {
       "id": "65-yas-ulasim-karti",
       "name": "65 Yaş Üstü Ücretsiz Toplu Taşıma Kartı",
       "legal_basis": "Ücretsiz veya İndirimli Seyahat Kartları Yönetmeliği (04.03.2014 tarih, 28931 sayılı Resmi Gazete)",

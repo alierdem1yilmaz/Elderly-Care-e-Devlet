@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<title>Yaşlı Bakım Rehberlik Asistanı</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>🤝 Bakım Rehberlik Asistanı</h1>
+    <nav>
+      <button class="tab-btn active" data-tab="chat">Sohbet</button>
+      <button class="tab-btn" data-tab="guide">Rehber</button>
+      <button class="tab-btn" data-tab="family">Aile Görünümü</button>
+    </nav>
+  </header>
+
+  <main>
+    <section id="tab-chat" class="tab-panel active">
+      <div id="chat-log"></div>
+      <form id="chat-form">
+        <input id="chat-input" type="text" placeholder="Buraya yazın..." autocomplete="off" />
+        <button type="submit">Gönder</button>
+      </form>
+    </section>
+
+    <section id="tab-guide" class="tab-panel">
+      <h2>Uygunluk Sonuçları</h2>
+      <ul id="eligibility-list" class="card-list"></ul>
+      <h2>Yapılacaklar Listesi</h2>
+      <ul id="checklist-list" class="card-list"></ul>
+    </section>
+
+    <section id="tab-family" class="tab-panel">
+      <h2>Bildirimler</h2>
+      <ul id="notifications-list" class="card-list"></ul>
+    </section>
+  </main>
+
+  <footer>
+    <span class="demo-label">Demo Senaryoları:</span>
+    <button id="btn-missing-doc">Eksik belge senaryosu</button>
+    <button id="btn-suspicious-sms">Şüpheli SMS senaryosu</button>
+  </footer>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

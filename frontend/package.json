@@ -1,0 +1,12 @@
+{
+  "name": "yasli-bakim-rehberlik-asistani",
+  "version": "0.1.0",
+  "description": "Yaşlı Bakım Rehberlik Asistanı - Desktop Demo",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^31.0.0"
+  }
+}

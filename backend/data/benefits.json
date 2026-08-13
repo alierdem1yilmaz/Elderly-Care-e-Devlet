@@ -1,0 +1,51 @@
+{
+  "_note": "TODO(Kişi 2): Bu kriterleri resmi kaynaklarla (SGK, Aile ve Sosyal Hizmetler Bakanlığı) doğrulayıp güncelleyin. Şu an demo iskeleti için taslak/örnek değerlerdir.",
+  "programs": [
+    {
+      "name": "65 Yaş Üstü Aylığı (Yaşlılık Aylığı)",
+      "criteria": {
+        "min_age": 65,
+        "income_below_threshold": true
+      },
+      "required_documents": [
+        "Nüfus cüzdanı fotokopisi",
+        "İkametgah belgesi",
+        "Gelir/mal beyan formu"
+      ],
+      "steps": [
+        "e-Devlet üzerinden 'Sosyal Yardım Başvurusu' hizmetini bulun",
+        "Gelir/mal beyan formunu doldurun",
+        "İl/İlçe Sosyal Yardımlaşma Vakfı'na başvurun"
+      ]
+    },
+    {
+      "name": "Evde Bakım / Engelli Bakım Ödeneği",
+      "criteria": {
+        "requires_disability_report": true,
+        "income_below_threshold": true
+      },
+      "required_documents": [
+        "Sağlık Kurulu (heyet) raporu",
+        "Nüfus cüzdanı fotokopisi",
+        "Gelir beyanı"
+      ],
+      "steps": [
+        "MHRS üzerinden hastaneden heyet raporu randevusu alın",
+        "Heyet raporunu aldıktan sonra Sosyal Hizmet Merkezi'ne başvurun"
+      ]
+    },
+    {
+      "name": "Ücretsiz Toplu Taşıma Kartı (65 Yaş Kartı)",
+      "criteria": {
+        "min_age": 65
+      },
+      "required_documents": [
+        "Nüfus cüzdanı fotokopisi",
+        "Fotoğraf"
+      ],
+      "steps": [
+        "Belediye ulaşım biriminden veya e-Devlet üzerinden başvurun"
+      ]
+    }
+  ]
+}

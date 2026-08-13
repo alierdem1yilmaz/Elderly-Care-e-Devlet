@@ -6,7 +6,34 @@
 # subagent buna göre eksik belge / sonraki adım hatırlatması üretir ve
 # backend/state.py::add_notification + mark_checklist_item ile case'i günceller.
 
-from backend.state import add_notification, get_case, mark_checklist_item, next_pending_checklist_item
+import re
+from datetime import date, timedelta
+
+from backend.state import (
+    add_appointment,
+    add_notification,
+    get_case,
+    mark_checklist_item,
+    next_pending_checklist_item,
+)
+
+_DATE_RE = re.compile(r"(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})")
+
+
+def _extract_date(text: str) -> date | None:
+    if "yarın" in text.casefold():
+        return date.today() + timedelta(days=1)
+    match = _DATE_RE.search(text)
+    if not match:
+        return None
+    day, month, year = (int(g) for g in match.groups())
+    if year < 100:
+        year += 2000
+    try:
+        return date(year, month, day)
+    except ValueError:
+        return None
+
 
 _APPLIED_SIGNALS = ["başvurdum", "başvuru yaptım", "gönderdim"]
 _MISSING_SIGNALS = ["yok", "bulamadım", "alamadım", "elimde değil", "temin edemedim", "henüz almadım"]
@@ -57,6 +84,17 @@ def _with_pending_hint(message: str) -> str:
 
 def handle_status_update(update_text: str) -> str:
     lowered = update_text.casefold()
+
+    if "randevu" in lowered:
+        found_date = _extract_date(update_text)
+        if found_date:
+            add_appointment(f"Randevu: {update_text.strip()}", found_date.isoformat())
+            message = (
+                f"Randevunuzu not ettim: {found_date.strftime('%d.%m.%Y')}. Tarih "
+                "yaklaşınca size hatırlatma göndereceğim."
+            )
+            add_notification("status_update", message)
+            return message
 
     if any(sig in lowered for sig in _APPLIED_SIGNALS):
         message = (

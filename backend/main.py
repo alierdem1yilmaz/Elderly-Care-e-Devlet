@@ -46,8 +46,9 @@ def get_case():
 
 @app.post("/case/status")
 def case_status(req: StatusUpdateRequest):
+    # tracking_agent.handle_status_update zaten uygun bildirimi (reminder/status_update)
+    # case'e yazıyor — burada ayrıca genel bir "status_ack" eklemek çift bildirime yol açıyordu.
     tracking_agent.handle_status_update(req.update)
-    state.add_notification("status_ack", f"Bildirdiğiniz durum kaydedildi: {req.update}")
     return state.get_case()
 
 

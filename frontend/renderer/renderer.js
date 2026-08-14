@@ -1,7 +1,30 @@
 // Sahiplik: Kişi 3 (Frontend & Demo)
 // API_CONTRACT.md ile aynı şemaya göre çalışır.
 
-const API_BASE = "http://127.0.0.1:8000";
+// Electron dosyayı file:// ile açıyor (yerel backend'e gitmeli) — web/Railway
+// dağıtımında ise aynı backend arayüzü de kendi üzerinden sunduğu için
+// (bkz. backend/main.py'deki StaticFiles mount) sayfanın kendi origin'i yeterli.
+const API_BASE = window.location.protocol === "file:" ? "http://127.0.0.1:8000" : window.location.origin;
+
+// --- Vaka kimliği (case_id) ---
+// Backend artık her yaşlı profili için ayrı bir vaka dosyası tutuyor (Supabase'e
+// taşındı), bu yüzden her istek "hangi kişiye ait" olduğunu bir case_id ile
+// belirtmeli. Aile hesabına GERÇEK bağlama (telefon numarası eşleştirme, mobil
+// app'ten görünme vb.) ileride bir eşleştirme koduyla yapılabilir (bkz.
+// POST /pair) — ama masaüstü uygulamasının ilk açılışta çalışabilmesi için bunu
+// beklemiyoruz: cihazda kalıcı, yerel bir kimlik kendiliğinden oluşturuluyor.
+const CASE_ID_STORAGE_KEY = "bakim_rehber_case_id";
+let CASE_ID = localStorage.getItem(CASE_ID_STORAGE_KEY);
+if (!CASE_ID) {
+  CASE_ID = crypto.randomUUID();
+  localStorage.setItem(CASE_ID_STORAGE_KEY, CASE_ID);
+}
+
+// Case'e özel endpoint'lere X-Case-Id başlığını otomatik ekleyen fetch sarmalayıcısı.
+function apiFetch(path, options = {}) {
+  const headers = { ...(options.headers || {}), "X-Case-Id": CASE_ID };
+  return fetch(`${API_BASE}${path}`, { ...options, headers });
+}
 
 // --- Tabs ---
 document.querySelectorAll(".tab-btn").forEach((btn) => {
@@ -333,28 +356,65 @@ function renderActiveSubagent(activeSubagent) {
   }
 }
 
-chatForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const message = chatInput.value.trim();
+function showTypingIndicator() {
+  const div = document.createElement("div");
+  div.className = "msg assistant typing-indicator";
+  div.id = "typing-indicator";
+  div.textContent = "Düşünüyor...";
+  chatLog.appendChild(div);
+  chatLog.scrollTop = chatLog.scrollHeight;
+}
+
+function hideTypingIndicator() {
+  document.getElementById("typing-indicator")?.remove();
+}
+
+async function sendChatMessage(message) {
   if (!message) return;
   appendMessage("user", message);
-  chatInput.value = "";
+  // Uzman bir subagent'a danışması gerektiğinde cevap 20-60 saniye sürebilir
+  // (bkz. backend/agents/orchestrator.py — artık arka plan görevinin
+  // gerçekten bitmesini bekliyoruz, hızlı ama eksik veri döndürmüyoruz).
+  // Kullanıcı bu süre boyunca hiçbir şey görmesin diye bir gösterge koyuyoruz.
+  showTypingIndicator();
 
   try {
-    const res = await fetch(`${API_BASE}/chat`, {
+    const res = await apiFetch("/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message }),
     });
     const data = await res.json();
+    hideTypingIndicator();
+    if (!res.ok) {
+      // Backend'den gelen gerçek hatayı göster (ör. eksik .env ayarı) — genel
+      // "bağlantı sorunu" mesajı asıl sebebi gizleyip debug'ı zorlaştırıyordu.
+      appendMessage("assistant", `Bir sorun oluştu: ${JSON.stringify(data.detail || data)}`);
+      console.error("Backend hatası:", data);
+      return;
+    }
     appendMessage("assistant", data.reply);
     speak(stripMarkdown(data.reply));
     renderActiveSubagent(data.active_subagent);
     if (data.case) renderCase(data.case);
   } catch (err) {
+    hideTypingIndicator();
     appendMessage("assistant", "Bağlantı sorunu oluştu. (backend çalışıyor mu?)");
     console.error(err);
   }
+}
+
+chatForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const message = chatInput.value.trim();
+  chatInput.value = "";
+  sendChatMessage(message);
+});
+
+// --- Hızlı başlangıç çipleri: yaşlı kullanıcı ne yazacağını düşünmek zorunda
+// kalmasın diye, tek dokunuşla sohbeti başlatan hazır cümleler. ---
+document.querySelectorAll(".chip").forEach((chip) => {
+  chip.addEventListener("click", () => sendChatMessage(chip.dataset.message));
 });
 
 // --- Durum bildirimi (POST /case/status) ---
@@ -368,7 +428,7 @@ statusForm.addEventListener("submit", async (e) => {
   statusInput.value = "";
 
   try {
-    const res = await fetch(`${API_BASE}/case/status`, {
+    const res = await apiFetch("/case/status", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ update }),
@@ -380,7 +440,7 @@ statusForm.addEventListener("submit", async (e) => {
   }
 });
 
-// --- Sorgula & Eşleştir (Profilim) formu ---
+// --- "Haklarım" formu ---
 const profileForm = document.getElementById("profile-form");
 const profileResults = document.getElementById("profile-results");
 const resultsPlaceholder = document.getElementById("results-placeholder");
@@ -420,7 +480,7 @@ profileForm.addEventListener("submit", async (e) => {
   resultsPlaceholder.hidden = true;
   profileResults.innerHTML = "<p>Değerlendiriliyor...</p>";
   try {
-    const res = await fetch(`${API_BASE}/profile`, {
+    const res = await apiFetch("/profile", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(profile),
@@ -510,8 +570,53 @@ const statActiveTracking = document.getElementById("stat-active-tracking");
 
 function renderHeaderStats(caseData) {
   const matched = (caseData.eligibility || []).filter((e) => e.eligible).length;
-  statMatchedRights.textContent = `${matched} KALEM`;
-  statActiveTracking.textContent = `${(caseData.appointments || []).length} BAŞVURU`;
+  statMatchedRights.textContent = String(matched);
+  statActiveTracking.textContent = String((caseData.appointments || []).length);
+}
+
+// --- Yol Haritası kartları ---
+function renderRoadmap(roadmap) {
+  const section = document.getElementById("roadmap-section");
+  const list = document.getElementById("roadmap-list");
+  list.innerHTML = "";
+
+  if (!roadmap || roadmap.length === 0) {
+    section.hidden = true;
+    return;
+  }
+  section.hidden = false;
+
+  roadmap.forEach((entry) => {
+    const card = document.createElement("div");
+    card.className = "roadmap-card";
+
+    const titleRow = document.createElement("div");
+    titleRow.className = "result-title-row";
+    const title = document.createElement("h4");
+    title.textContent = entry.program;
+    titleRow.appendChild(title);
+    const fullText = [entry.program, ...(entry.steps || [])].join(". ");
+    titleRow.appendChild(buildReadAloudButton(fullText));
+    card.appendChild(titleRow);
+
+    const stepsList = document.createElement("ol");
+    stepsList.className = "roadmap-steps";
+    (entry.steps || []).forEach((step) => {
+      const li = document.createElement("li");
+      li.textContent = step;
+      stepsList.appendChild(li);
+    });
+    card.appendChild(stepsList);
+
+    if (entry.administered_by) {
+      const admin = document.createElement("div");
+      admin.className = "checklist-item-tip";
+      admin.textContent = `Kurum: ${entry.administered_by}`;
+      card.appendChild(admin);
+    }
+
+    list.appendChild(card);
+  });
 }
 
 // --- Rehber & Aile Görünümü paneli ---
@@ -519,6 +624,7 @@ function renderCase(caseData) {
   renderEligibility(caseData.eligibility || []);
   renderNextStep(caseData.next_step);
   renderHeaderStats(caseData);
+  renderRoadmap(caseData.roadmap);
 
   const checklist = document.getElementById("checklist-list");
   checklist.innerHTML = "";
@@ -583,7 +689,7 @@ function renderCase(caseData) {
 
 async function loadCase() {
   try {
-    const res = await fetch(`${API_BASE}/case`);
+    const res = await apiFetch("/case");
     renderCase(await res.json());
   } catch (err) {
     console.warn("Case yüklenemedi:", err);
@@ -613,7 +719,7 @@ function findDocumentTip(itemText) {
 
 async function markChecklistItemReady(itemText) {
   try {
-    const res = await fetch(`${API_BASE}/case/status`, {
+    const res = await apiFetch("/case/status", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ update: `${itemText} belgesini hazırladım` }),
@@ -623,6 +729,67 @@ async function markChecklistItemReady(itemText) {
   } catch (err) {
     console.error("Belge hazır olarak işaretlenemedi:", err);
   }
+}
+
+// --- Belge Yükle (yerel/cihazda saklanır — belge içeriği hiçbir yere
+// gönderilmez, sadece dosya adı ve tarih Yapılacaklar sekmesinde listelenir) ---
+const UPLOADED_DOCS_KEY = `bakim_rehber_uploaded_docs_${CASE_ID}`;
+const uploadDocBtn = document.getElementById("upload-doc-btn");
+const uploadDocInput = document.getElementById("upload-doc-input");
+const uploadedDocsList = document.getElementById("uploaded-docs-list");
+
+function loadUploadedDocs() {
+  try {
+    return JSON.parse(localStorage.getItem(UPLOADED_DOCS_KEY) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function saveUploadedDocs(docs) {
+  localStorage.setItem(UPLOADED_DOCS_KEY, JSON.stringify(docs));
+}
+
+function renderUploadedDocs() {
+  const docs = loadUploadedDocs();
+  uploadedDocsList.innerHTML = "";
+  docs.forEach((doc, index) => {
+    const li = document.createElement("li");
+    const text = document.createElement("span");
+    text.textContent = `${doc.name} — ${doc.date}`;
+    li.appendChild(text);
+
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "doc-remove-btn";
+    removeBtn.textContent = "Sil";
+    removeBtn.title = "Bu belgeyi listeden kaldır";
+    removeBtn.addEventListener("click", () => {
+      const current = loadUploadedDocs();
+      current.splice(index, 1);
+      saveUploadedDocs(current);
+      renderUploadedDocs();
+    });
+    li.appendChild(removeBtn);
+
+    uploadedDocsList.appendChild(li);
+  });
+}
+
+if (uploadDocBtn && uploadDocInput) {
+  uploadDocBtn.addEventListener("click", () => uploadDocInput.click());
+  uploadDocInput.addEventListener("change", () => {
+    const file = uploadDocInput.files[0];
+    if (!file) return;
+    const docs = loadUploadedDocs();
+    docs.push({
+      name: file.name,
+      date: new Date().toLocaleDateString("tr-TR"),
+    });
+    saveUploadedDocs(docs);
+    renderUploadedDocs();
+    uploadDocInput.value = "";
+  });
 }
 
 // --- e-Devlet Kılavuzu (akordiyon) ---
@@ -676,7 +843,7 @@ async function loadEdevletGuide() {
 
 // --- Scripted demo senaryoları ---
 document.getElementById("btn-missing-doc").addEventListener("click", async () => {
-  const res = await fetch(`${API_BASE}/scenario/missing-document`, { method: "POST" });
+  const res = await apiFetch("/scenario/missing-document", { method: "POST" });
   const data = await res.json();
   renderCase(data);
   const last = data.notifications[data.notifications.length - 1];
@@ -684,7 +851,7 @@ document.getElementById("btn-missing-doc").addEventListener("click", async () =>
 });
 
 document.getElementById("btn-suspicious-sms").addEventListener("click", async () => {
-  const res = await fetch(`${API_BASE}/scenario/suspicious-sms`, { method: "POST" });
+  const res = await apiFetch("/scenario/suspicious-sms", { method: "POST" });
   const data = await res.json();
   renderCase(data);
   const last = data.notifications[data.notifications.length - 1];
@@ -697,7 +864,8 @@ async function waitForBackend(retries = 15) {
     try {
       const res = await fetch(`${API_BASE}/ping`);
       if (res.ok) {
-        appendMessage("assistant", "Merhaba! Size sosyal yardımlar konusunda nasıl yardımcı olabilirim?");
+        // Karşılama mesajı artık .hero-welcome'da sabit olarak duruyor —
+        // sohbet günlüğü boş başlar, kullanıcı ilk mesajını yazınca dolar.
         await loadDocumentTips();
         loadCase();
         loadEdevletGuide();
@@ -712,6 +880,7 @@ async function waitForBackend(retries = 15) {
 }
 
 waitForBackend();
+renderUploadedDocs(); // yerelde saklandığı için backend'i beklemeye gerek yok
 
 setupMicButton(document.getElementById("mic-btn"), chatInput, document.getElementById("mic-status"));
 setupMicButton(document.getElementById("status-mic-btn"), statusInput, null);

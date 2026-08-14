@@ -10,6 +10,9 @@
 # ayrıca hem burada hem orchestrator'da bildirim yazmak çift kayda yol açardı.
 # Serbest sohbette ("başvuru durumumu merak ediyorum" gibi) kullanıcı orchestrator
 # ile konuşmaya devam eder; TRACKING_PROMPT (bkz. orchestrator.py) o tarafı kapsar.
+#
+# Her fonksiyon bir case_id alır (bkz. supabase/schema.sql) — artık tek bir
+# global vaka dosyası yok, her yaşlı profili kendi durumuna sahip.
 
 import re
 from datetime import date, timedelta
@@ -95,7 +98,7 @@ def _significant_words(text: str) -> set[str]:
     return {_stem(w) for w in text.split() if len(w) > 3 and w.casefold() not in _STOPWORDS}
 
 
-def _match_checklist_item(update_text: str) -> dict | None:
+def _match_checklist_item(case_id: str, update_text: str) -> dict | None:
     """checklist'teki kalemler arasından, kullanıcının cümlesiyle en çok ortak
     (gövdelenmiş) kelimesi olan kalemi döner — tek ortak kelimeye değil, en güçlü
     örtüşmeye göre seçer ki benzer isimli belgeler birbirine karışmasın."""
@@ -104,34 +107,34 @@ def _match_checklist_item(update_text: str) -> dict | None:
         return None
 
     best_entry, best_score = None, 0
-    for entry in get_case()["checklist"]:
+    for entry in get_case(case_id)["checklist"]:
         score = len(text_stems & _significant_words(entry["item"]))
         if score > best_score:
             best_entry, best_score = entry, score
     return best_entry
 
 
-def _with_pending_hint(message: str) -> str:
+def _with_pending_hint(case_id: str, message: str) -> str:
     """Eşleşme bulunamadığında, checklist'te bekleyen bir kalem varsa proaktif
     olarak hatırlatır — "Takip & Proaktif Bildirim" ilkesine hizmet eder."""
-    pending = next_pending_checklist_item()
+    pending = next_pending_checklist_item(case_id)
     if pending:
         message += f" Bu arada, checklist'te hâlâ bekleyen bir kaleminiz var: \"{pending['item']}\"."
     return message
 
 
-def handle_status_update(update_text: str) -> str:
+def handle_status_update(case_id: str, update_text: str) -> str:
     lowered = update_text.casefold()
 
     if "randevu" in lowered:
         found_date = _extract_date(update_text)
         if found_date:
-            add_appointment(f"Randevu: {update_text.strip()}", found_date.isoformat())
+            add_appointment(case_id, f"Randevu: {update_text.strip()}", found_date.isoformat())
             message = (
                 f"Randevunuzu not ettim: {found_date.strftime('%d.%m.%Y')}. Tarih "
                 "yaklaşınca size hatırlatma göndereceğim."
             )
-            add_notification("status_update", message)
+            add_notification(case_id, "status_update", message)
             return message
 
         # Tarih yok — "bir randevu aldım" gibi belirsiz bir mesajı sessizce
@@ -141,7 +144,7 @@ def handle_status_update(update_text: str) -> str:
             "Randevunuzu not aldım ama tarihini anlayamadım — hangi tarihte? "
             "(örn. 20.08.2026 ya da \"yarın\" diyebilirsiniz.)"
         )
-        add_notification("status_update", message)
+        add_notification(case_id, "status_update", message)
         return message
 
     if any(sig in lowered for sig in _APPLIED_SIGNALS):
@@ -149,13 +152,13 @@ def handle_status_update(update_text: str) -> str:
             "Başvurunuzu aldığımı not ettim. İlgili kurum genelde başvuruları birkaç "
             "hafta içinde sonuçlandırır; sonuç gelmezse ben size hatırlatma göndereceğim."
         )
-        add_notification("status_update", message)
+        add_notification(case_id, "status_update", message)
         return message
 
     if any(sig in lowered for sig in _MISSING_SIGNALS):
-        matched = _match_checklist_item(update_text)
+        matched = _match_checklist_item(case_id, update_text)
         if matched:
-            mark_checklist_item(matched["item"], done=False)
+            mark_checklist_item(case_id, matched["item"], done=False)
             message = (
                 f"Not aldım: \"{matched['item']}\" belgesi henüz sizde yok. Bu belge "
                 "olmadan başvurunuz tamamlanamaz — bir an önce ilgili kurumdan temin "
@@ -163,25 +166,26 @@ def handle_status_update(update_text: str) -> str:
             )
         else:
             message = _with_pending_hint(
+                case_id,
                 f"Not aldım: \"{update_text}\". Hangi belgenin eksik olduğunu tam "
                 "olarak anlayamadım; checklist'teki belge adlarından birini "
-                "söylerseniz onu işaretleyip hatırlatabilirim."
+                "söylerseniz onu işaretleyip hatırlatabilirim.",
             )
-        add_notification("reminder", message)
+        add_notification(case_id, "reminder", message)
         return message
 
     if any(sig in lowered for sig in _DONE_SIGNALS):
-        matched = _match_checklist_item(update_text)
+        matched = _match_checklist_item(case_id, update_text)
         if matched:
-            mark_checklist_item(matched["item"], done=True)
+            mark_checklist_item(case_id, matched["item"], done=True)
             message = f"Harika, \"{matched['item']}\" belgesini tamamlanmış olarak işaretledim."
-            add_notification("status_update", message)
+            add_notification(case_id, "status_update", message)
             return message
 
     message = _with_pending_hint(
-        f"Not aldım: \"{update_text}\". Size en kısa sürede bir sonraki adımı hatırlatacağım."
+        case_id, f"Not aldım: \"{update_text}\". Size en kısa sürede bir sonraki adımı hatırlatacağım."
     )
-    add_notification("status_update", message)
+    add_notification(case_id, "status_update", message)
     return message
 
 

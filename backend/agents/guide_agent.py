@@ -32,6 +32,21 @@ def build_checklist(program: str, benefits: list[dict] | None = None) -> list[di
     return [{"item": doc, "done": False} for doc in docs]
 
 
+def build_roadmap(program: str, benefits: list[dict] | None = None) -> dict | None:
+    """Yol haritası kartı için YAPILANDIRILMIŞ veri döner (metin paragrafı değil) —
+    kullanıcı arayüzünde numaralı, kalıcı adım kartları olarak gösterilir; sohbette
+    kaybolan bir paragraftan çok daha takip edilebilir. Program bulunamazsa None."""
+    benefits = benefits if benefits is not None else load_benefits()
+    match = _find_program(program, benefits)
+    if match is None:
+        return None
+    return {
+        "program": match["name"],
+        "steps": list(match.get("steps", [])),
+        "administered_by": match.get("administered_by"),
+    }
+
+
 def build_steps(program: str, benefits: list[dict] | None = None) -> str:
     benefits = benefits if benefits is not None else load_benefits()
     match = _find_program(program, benefits)

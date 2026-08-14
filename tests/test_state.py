@@ -1,10 +1,13 @@
-# Sahiplik: Kişi 2 (Backend İçerik & Takip)
+# Sahiplik: Kişi 2 (Backend İçerik & Takip) — Supabase'e taşıma: Kişi 1 (ali-erdem)
 
 from datetime import date, timedelta
 
 import pytest
 
 from backend import state
+from tests.conftest import TEST_CASE_ID
+
+C = TEST_CASE_ID
 
 
 def test_load_benefits_returns_validated_programs():
@@ -26,48 +29,48 @@ def test_load_edevlet_guide_returns_sections_with_title_and_body():
 
 
 def test_mark_checklist_item_matches_substring_and_toggles_done():
-    state.set_checklist([{"item": "Nüfus cüzdanı fotokopisi", "done": False}])
+    state.set_checklist(C, [{"item": "Nüfus cüzdanı fotokopisi", "done": False}])
 
-    matched = state.mark_checklist_item("nüfus cüzdanı", done=True)
+    matched = state.mark_checklist_item(C, "nüfus cüzdanı", done=True)
 
     assert matched["done"] is True
-    assert state.get_case()["checklist"][0]["done"] is True
+    assert state.get_case(C)["checklist"][0]["done"] is True
 
 
 def test_mark_checklist_item_no_match_returns_none():
-    state.set_checklist([{"item": "Nüfus cüzdanı fotokopisi", "done": False}])
+    state.set_checklist(C, [{"item": "Nüfus cüzdanı fotokopisi", "done": False}])
 
-    assert state.mark_checklist_item("alakasız belge", done=True) is None
+    assert state.mark_checklist_item(C, "alakasız belge", done=True) is None
 
 
 def test_next_pending_checklist_item_returns_first_undone():
-    state.set_checklist([
+    state.set_checklist(C, [
         {"item": "A belgesi", "done": True},
         {"item": "B belgesi", "done": False},
         {"item": "C belgesi", "done": False},
     ])
 
-    pending = state.next_pending_checklist_item()
+    pending = state.next_pending_checklist_item(C)
 
     assert pending["item"] == "B belgesi"
 
 
 def test_next_pending_checklist_item_none_when_all_done():
-    state.set_checklist([{"item": "A belgesi", "done": True}])
+    state.set_checklist(C, [{"item": "A belgesi", "done": True}])
 
-    assert state.next_pending_checklist_item() is None
+    assert state.next_pending_checklist_item(C) is None
 
 
 def test_add_appointment_rejects_non_iso_date():
     with pytest.raises(ValueError):
-        state.add_appointment("Randevu", "20.08.2026")
+        state.add_appointment(C, "Randevu", "20.08.2026")
 
 
 def test_get_case_generates_reminder_for_near_appointment():
     soon = (date.today() + timedelta(days=1)).isoformat()
-    state.add_appointment("Heyet raporu randevusu", soon)
+    state.add_appointment(C, "Heyet raporu randevusu", soon)
 
-    case = state.get_case()
+    case = state.get_case(C)
 
     reminder_messages = [n["message"] for n in case["notifications"] if n["type"] == "reminder"]
     assert any("Heyet raporu randevusu" in m for m in reminder_messages)
@@ -75,48 +78,48 @@ def test_get_case_generates_reminder_for_near_appointment():
 
 def test_get_case_no_reminder_for_far_appointment():
     far = (date.today() + timedelta(days=30)).isoformat()
-    state.add_appointment("Uzak randevu", far)
+    state.add_appointment(C, "Uzak randevu", far)
 
-    case = state.get_case()
+    case = state.get_case(C)
 
     assert case["notifications"] == []
 
 
 def test_next_step_prompts_profile_when_nothing_else_pending():
-    assert "Sorgula" in state.get_next_step()
+    assert "Haklarım" in state.get_next_step(C)
 
 
 def test_next_step_prefers_soon_appointment_over_checklist():
     soon = (date.today() + timedelta(days=2)).isoformat()
-    state.add_appointment("Heyet raporu randevusu", soon)
-    state.set_checklist([{"item": "Nüfus cüzdanı fotokopisi", "done": False}])
+    state.add_appointment(C, "Heyet raporu randevusu", soon)
+    state.set_checklist(C, [{"item": "Nüfus cüzdanı fotokopisi", "done": False}])
 
-    assert "Heyet raporu randevusu" in state.get_next_step()
+    assert "Heyet raporu randevusu" in state.get_next_step(C)
 
 
 def test_next_step_falls_back_to_pending_checklist_item():
-    state.set_checklist([{"item": "Nüfus cüzdanı fotokopisi", "done": False}])
+    state.set_checklist(C, [{"item": "Nüfus cüzdanı fotokopisi", "done": False}])
 
-    assert "Nüfus cüzdanı fotokopisi" in state.get_next_step()
+    assert "Nüfus cüzdanı fotokopisi" in state.get_next_step(C)
 
 
 def test_next_step_says_nothing_pending_when_all_done():
-    state.set_profile({"age": 70})
-    state.set_checklist([{"item": "Nüfus cüzdanı fotokopisi", "done": True}])
+    state.set_profile(C, {"age": 70})
+    state.set_checklist(C, [{"item": "Nüfus cüzdanı fotokopisi", "done": True}])
 
-    assert "bekleyen bir işleminiz yok" in state.get_next_step()
+    assert "bekleyen bir işleminiz yok" in state.get_next_step(C)
 
 
 def test_get_case_includes_next_step_field():
-    assert "next_step" in state.get_case()
+    assert "next_step" in state.get_case(C)
 
 
 def test_get_case_does_not_repeat_reminder_on_second_call():
     soon = (date.today() + timedelta(days=1)).isoformat()
-    state.add_appointment("Heyet raporu randevusu", soon)
+    state.add_appointment(C, "Heyet raporu randevusu", soon)
 
-    state.get_case()
-    case = state.get_case()
+    state.get_case(C)
+    case = state.get_case(C)
 
     reminder_count = sum(1 for n in case["notifications"] if n["type"] == "reminder")
     assert reminder_count == 1

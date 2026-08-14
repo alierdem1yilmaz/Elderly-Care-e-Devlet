@@ -38,6 +38,36 @@
       "id": "dolandiricilik",
       "title": "Dolandırıcılıktan nasıl korunurum?",
       "body": "\"e-Devlet şifreniz güncellenmiştir, tıklayın\" ya da \"hesabınız kapatılacak, hemen bilgilerinizi girin\" gibi SMS/aramalar SAHTEDİR. Gerçek e-Devlet ya da bankalar sizden telefonla veya linkle şifre/kod istemez. Böyle bir mesaj alırsanız hiçbir linke tıklamayın, bilgi vermeyin; şüpheliyseniz bir aile üyenize danışın veya bu uygulamadaki Sohbet'e yazıp sorun."
+    },
+    {
+      "id": "yanlis-tiklama-korkusu",
+      "title": "Yanlış bir yere tıklarsam bir şeyi bozar mıyım?",
+      "body": "Hayır, merak etmeyin. e-Devlet'te gezinirken yanlış bir yere tıklamak hiçbir şeyi \"bozmaz\" ya da silmez. Bir başvuruyu yanlışlıkla gönderemezsiniz — çoğu işlemde son adımda mutlaka \"Onayla\" veya \"Gönder\" gibi ayrı bir buton vardır ve sizden emin olup olmadığınız sorulur. Bir yeri yanlış tıkladıysanız tarayıcınızın sol üstündeki \"geri\" okuna basıp önceki sayfaya dönebilirsiniz. Rahat gezinebilirsiniz."
+    },
+    {
+      "id": "yazi-buyutme",
+      "title": "Yazılar çok küçük, nasıl büyütürüm?",
+      "body": "Bilgisayarınızda veya telefonunuzda klavyeden Ctrl (Mac'te Cmd) tuşuna basılı tutup \"+\" tuşuna birkaç kez basarsanız sayfadaki her şey büyür. Küçültmek için aynı şekilde \"-\" tuşuna basın. Telefonda ise iki parmağınızla ekrana dokunup birbirinden uzaklaştırırsanız (\"pinch\" hareketi) yakınlaşır, yazılar büyür."
+    },
+    {
+      "id": "ucretsiz-mi",
+      "title": "e-Devlet'i kullanmak ücretli mi?",
+      "body": "Hayır, e-Devlet Kapısı'nı kullanmak tamamen ücretsizdir. Sosyal yardım başvurusu yapmak, belge sorgulamak, bu uygulamadaki hizmetlere bakmak için hiçbir ücret ödemezsiniz. Sizden bir yerde \"işleminiz için ücret ödeyin\" denirse bu bir dolandırıcılık işaretidir."
+    },
+    {
+      "id": "aile-uyesi-yardimi",
+      "title": "Aile üyem benim yerime e-Devlet'e girebilir mi?",
+      "body": "Bir aile üyeniz, siz yanınızdayken ve izninizle size yardımcı olabilir (ekranı birlikte okumak, hangi butona basılacağını göstermek gibi) — bu tamamen normaldir ve tavsiye edilir. Ama şifrenizi kalıcı olarak başkasına verip \"benim yerime hep sen gir\" demek yerine, mümkünse siz kendi elinizle girmeye çalışın; anlamadığınız yerde bu uygulamadaki Sohbet'e sorabilir ya da aile üyenizden ekranı birlikte okumasını isteyebilirsiniz. Bazı özel işlemler için resmi \"vekalet\" gerekebilir; bu durumda bir noterden bilgi almanız gerekir."
+    },
+    {
+      "id": "bilgisayarim-yok",
+      "title": "Bilgisayarım veya akıllı telefonum yok, ne yapabilirim?",
+      "body": "e-Devlet'e hiç girmeden de birçok işleminizi yürütebilirsiniz: İkamet ettiğiniz yerdeki Sosyal Yardımlaşma ve Dayanışma Vakfı'na (SYDV) ya da Aile ve Sosyal Hizmetler İl Müdürlüğü'ne şahsen giderek, kimliğinizle başvuru yapabilirsiniz. Ayrıca bazı belediyelerde ve PTT şubelerinde de yardımcı olan görevliler bulunur. Bu uygulamadaki Sohbet'ten de size hangi kuruma gitmeniz gerektiğini sorabilirsiniz."
+    },
+    {
+      "id": "belge-yukleme",
+      "title": "e-Devlet'te belge/fotoğraf yükleme nasıl olur?",
+      "body": "Bazı başvurularda (örneğin sağlık raporu, kimlik fotokopisi) sistemin sizden bir belgenin fotoğrafını veya taramasını \"yüklemenizi\" istediği bir ekran çıkabilir. Genelde şöyle çalışır: ekranda \"Dosya Seç\" ya da \"Yükle\" yazan bir kutu görürsünüz, üstüne tıklarsınız, açılan pencereden bilgisayarınızda/telefonunuzda kayıtlı fotoğrafı bulup seçersiniz, \"Aç\" dersiniz. Telefonla resmi çekip yüklemek isterseniz, o kutuya tıkladığınızda telefon size doğrudan \"Fotoğraf Çek\" seçeneği de sunabilir. Emin değilseniz, bu ekrana geldiğinizde bu uygulamadaki Sohbet'e yazıp adım adım anlatmamı isteyebilirsiniz — ekranda ne gördüğünüzü bana söylemeniz yeterli."
     }
   ]
 }

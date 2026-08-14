@@ -1,5 +1,6 @@
 {
   "name": "yasli-bakim-rehberlik-asistani",
+  "productName": "Yaşlı Bakım Rehberi",
   "version": "0.1.0",
   "description": "Yaşlı Bakım Rehberlik Asistanı - Desktop Demo",
   "main": "main.js",

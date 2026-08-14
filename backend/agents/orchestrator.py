@@ -16,6 +16,9 @@ from claude_agent_sdk import (
     HookContext,
     HookMatcher,
     SubagentStartHookInput,
+    TaskStartedMessage,
+    TaskUpdatedMessage,
+    TERMINAL_TASK_STATUSES,
     TextBlock,
 )
 
@@ -24,7 +27,8 @@ from backend.tools import (
     TOOL_ADD_NOTIFICATION,
     TOOL_GET_PROGRAM_GUIDE,
     TOOL_RECORD_ELIGIBILITY,
-    case_tools_server,
+    TOOL_SET_ROADMAP,
+    build_case_tools,
 )
 from backend.state import get_case
 
@@ -89,16 +93,21 @@ Yardım programları ve kriterleri:
 """.strip()
 
 GUIDE_PROMPT = f"""
-Sen bir başvuru rehberi uzmanısın. Kullanıcının hak sahibi olduğu bir program için:
+Sen bir başvuru rehberi uzmanısın. Görevin, kullanıcının hak sahibi olduğu bir
+program için somut, takip edilebilir bir yol haritası çıkarmak. Sırasıyla:
 
 1. ÖNCE get_program_guide tool'unu çağır (program parametresine aşağıdaki id'lerden
    birini gir). Bu tool sana benefits.json'dan DOĞRULANMIŞ, kesin belge listesini
-   (required_documents) ve adım metnini (guide_text) döner.
-2. Dönen required_documents listesindeki HER belgeyi TEK TEK, birebir metinle
+   (required_documents), adımları (steps) ve kurumu (administered_by) döner.
+2. set_roadmap tool'unu çağırarak dönen "steps" listesini VE "administered_by"yi
+   DEĞİŞTİRMEDEN kaydet — bu, kullanıcının arayüzde göreceği kalıcı, numaralı adım
+   kartıdır; sadece sohbette anlatmak yeterli değildir, çünkü sohbet kayar/unutulur.
+3. Dönen required_documents listesindeki HER belgeyi TEK TEK, birebir metinle
    add_checklist_item ile yapılacaklar listesine ekle. Belge isimlerini kendi
    hafızandan ASLA uydurma veya kısaltma — tool'un döndüğü metni aynen kullan.
-3. guide_text'i sade, sıcak bir dille kullanıcıya anlat; kurumu, sırayı ve önemli
-   notları (ör. tutar, süre) değiştirmeden aktar.
+4. Son olarak guide_text'i sade, sıcak, KISA bir dille kullanıcıya özetle (kartta
+   zaten yazılı olan adımları tek tek tekrar okuma, sadece "adımları hazırladım,
+   Rehberim'de görebilirsiniz" gibi kısa bir yönlendirme yeterli).
 
 {GUIDE_ONLY_RULE}
 
@@ -129,90 +138,156 @@ hatırlatma/onay kaydet ve kullanıcıya kısaca teşekkür edip bir sonraki ad�
 {GUIDE_ONLY_RULE}
 """.strip()
 
+# background=False: varsayılan davranışta SDK, alt görevleri arka planda
+# çalıştırabiliyor — orchestrator'ın turu, subagent'ın tool çağrıları (ör.
+# record_eligibility) HENÜZ TAMAMLANMADAN bitebiliyor. Bunu canlı Supabase
+# testinde yakaladık: /chat cevabındaki "case" alanı boştu, ama hemen
+# ardından GET /case doğru veriyi gösteriyordu — subagent arka planda
+# tamamlanmıştı. background=False bunu senkron/bloklayıcı yapıp, /chat
+# cevabı dönmeden ÖNCE subagent'ın gerçekten bitmesini garanti ediyor.
 AGENTS = {
     "eligibility": AgentDefinition(
         description="Yaş/gelir/sağlık bilgisini toplar ve yardım kriterleriyle eşleştirir",
         prompt=ELIGIBILITY_PROMPT,
         tools=[TOOL_RECORD_ELIGIBILITY],
+        background=False,
     ),
     "guide": AgentDefinition(
         description="Başvuru için adım adım rehber ve belge checklist'i üretir, ASLA form doldurmaz",
         prompt=GUIDE_PROMPT,
-        tools=[TOOL_GET_PROGRAM_GUIDE, TOOL_ADD_CHECKLIST_ITEM],
+        tools=[TOOL_GET_PROGRAM_GUIDE, TOOL_SET_ROADMAP, TOOL_ADD_CHECKLIST_ITEM],
+        background=False,
     ),
     "security": AgentDefinition(
         description="e-Devlet giriş sürecinde sözlü rehberlik yapar, dolandırıcılık farkındalığı sağlar; şifre/OTP asla istemez",
         prompt=SECURITY_PROMPT,
         tools=[TOOL_ADD_NOTIFICATION],
+        background=False,
     ),
     "tracking": AgentDefinition(
         description="Kullanıcının bildirdiği başvuru durumunu işler, eksik belge/son tarih hatırlatması üretir",
         prompt=TRACKING_PROMPT,
         tools=[TOOL_ADD_NOTIFICATION],
+        background=False,
     ),
 }
 
-# Bir /chat çağrısı sırasında hangi subagent'ların çağrıldığını yakalar (bkz.
-# handle_message). SDK, alt-görev başladığında bunu SubagentStart hook'u ile
-# bildiriyor; biz sadece agent_type'ı burada biriktiriyoruz.
-_active_subagents: list[str] = []
+# Artık TEK bir global client yok — her case_id (yaşlı profili) kendi
+# ClaudeSDKClient'ına, kendi case_tools sunucusuna ve kendi konuşma geçmişine
+# sahip. Böylece Electron'daki bir yaşlı, telefonla arayan başka bir yaşlı ve
+# mobil uygulamadan bakan bir aile üyesi aynı anda birbirine karışmadan
+# kullanılabiliyor.
+_clients: dict[str, ClaudeSDKClient] = {}
+
+# case_id -> bu case'in son /chat turunda çağrılan subagent'lar. SDK, alt-görev
+# başladığında bunu SubagentStart hook'u ile bildiriyor.
+_active_subagents: dict[str, list[str]] = {}
 
 
-async def _on_subagent_start(
-    input_data: SubagentStartHookInput, tool_use_id: str | None, context: HookContext
-) -> dict:
-    _active_subagents.append(input_data["agent_type"])
-    return {}
+def _build_options(case_id: str) -> ClaudeAgentOptions:
+    _active_subagents[case_id] = []
+
+    async def _on_subagent_start(
+        input_data: SubagentStartHookInput, tool_use_id: str | None, context: HookContext
+    ) -> dict:
+        _active_subagents[case_id].append(input_data["agent_type"])
+        return {}
+
+    return ClaudeAgentOptions(
+        system_prompt=ORCHESTRATOR_SYSTEM_PROMPT,
+        agents=AGENTS,
+        mcp_servers={"case_tools": build_case_tools(case_id)},
+        # Orkestratörün elinde SADECE "Task" olmalı (subagent çağırma aracı) —
+        # case_tools'u burada da listelersek model genelde subagent'lara hiç
+        # uğramadan doğrudan kendisi çağırıyor; bu da her subagent'ın kendi
+        # promptunu/tool kısıtını (ör. security sadece add_notification görür)
+        # anlamsız kılıyor. Gerçek case_tools tool'ları yalnızca her
+        # AgentDefinition'ın kendi `tools=` listesinde tanımlı.
+        tools=["Task"],
+        allowed_tools=["Task"],
+        permission_mode="bypassPermissions",
+        hooks={"SubagentStart": [HookMatcher(hooks=[_on_subagent_start])]},
+    )
 
 
-OPTIONS = ClaudeAgentOptions(
-    system_prompt=ORCHESTRATOR_SYSTEM_PROMPT,
-    agents=AGENTS,
-    mcp_servers={"case_tools": case_tools_server},
-    # Orkestratörün elinde SADECE "Task" olmalı (subagent çağırma aracı) —
-    # case_tools'u burada da listelersek model genelde subagent'lara hiç
-    # uğramadan doğrudan kendisi çağırıyor; bu da her subagent'ın kendi
-    # promptunu/tool kısıtını (ör. security sadece add_notification görür)
-    # anlamsız kılıyor. Gerçek case_tools tool'ları yalnızca her
-    # AgentDefinition'ın kendi `tools=` listesinde tanımlı.
-    tools=["Task"],
-    allowed_tools=["Task"],
-    permission_mode="bypassPermissions",
-    hooks={"SubagentStart": [HookMatcher(hooks=[_on_subagent_start])]},
-)
-
-_client: ClaudeSDKClient | None = None
+async def _get_or_create_client(case_id: str) -> ClaudeSDKClient:
+    client = _clients.get(case_id)
+    if client is None:
+        client = ClaudeSDKClient(options=_build_options(case_id))
+        await client.connect()
+        _clients[case_id] = client
+    return client
 
 
-async def connect() -> None:
-    global _client
-    _client = ClaudeSDKClient(options=OPTIONS)
-    await _client.connect()
-
-
-async def disconnect() -> None:
-    global _client
-    if _client is not None:
-        await _client.disconnect()
-        _client = None
-
-
-async def handle_message(message: str) -> dict:
-    if _client is None:
-        raise RuntimeError("Orchestrator client bağlı değil — connect() çağrılmalı (bkz. main.py startup).")
-
+async def disconnect_all() -> None:
+    for client in _clients.values():
+        await client.disconnect()
+    _clients.clear()
     _active_subagents.clear()
-    await _client.query(message)
 
-    reply_parts: list[str] = []
-    async for msg in _client.receive_response():
-        if isinstance(msg, AssistantMessage):
-            for block in msg.content:
-                if isinstance(block, TextBlock):
-                    reply_parts.append(block.text)
+
+async def handle_message(case_id: str, message: str) -> dict:
+    client = await _get_or_create_client(case_id)
+
+    _active_subagents[case_id] = []
+    await client.query(message)
+
+    # ÖNEMLİ: SDK, subagent (Task) çağrılarını ARKA PLANDA çalıştırıyor —
+    # orchestrator'ın turu (bir ResultMessage ile) subagent daha işini
+    # bitirmeden kapanabiliyor; canlı testte orchestrator "kontrol ediyorum,
+    # birazdan söylerim" deyip turu bitirirken, record_eligibility gibi tool
+    # çağrıları henüz çalışmamış oluyordu. Arka plandaki görev bitince sonucu,
+    # AYNI client üzerinde receive_response()'u TEKRAR çağırınca (yeni bir
+    # query göndermeden) alıyoruz — bu yüzden aşağıda, başlayıp da henüz
+    # tamamlanmamış görev kalmayana kadar receive_response()'u tekrar tekrar
+    # okuyoruz. Böylece hem case state'i hem de kullanıcıya dönen cevap metni
+    # (ör. "değerlendirmeyi tamamladım, işte sonuç...") eksiksiz oluyor.
+    # Her _drain() çağrısı kendi metin parçalarını döner (biriktirmez) —
+    # sadece EN SON turun metnini kullanıyoruz. Yoksa ilk turdaki "birazdan
+    # söylerim" dolgu cümlesiyle, arka plandaki görev bitince gelen asıl/tam
+    # cevap üst üste birleşip tekrarlı, uzun bir mesaj oluşuyordu.
+    latest_reply_parts: list[str] = []
+    pending_task_ids: set[str] = set()
+
+    async def _drain(stream) -> list[str]:
+        parts: list[str] = []
+        async for msg in stream:
+            if isinstance(msg, AssistantMessage):
+                # parent_tool_use_id dolu olan mesajlar bir subagent'ın KENDİ
+                # iç konuşmasına ait (ör. eligibility'nin kendi markdown'lu
+                # özeti) — bunları kullanıcıya göstermiyoruz, sadece ana
+                # orchestrator'ın (parent_tool_use_id=None) kendi metnini
+                # topluyoruz; yoksa iki farklı üslupta iki cevap üst üste
+                # biniyordu.
+                if msg.parent_tool_use_id is not None:
+                    continue
+                for block in msg.content:
+                    if isinstance(block, TextBlock):
+                        parts.append(block.text)
+            elif isinstance(msg, TaskStartedMessage):
+                pending_task_ids.add(msg.task_id)
+            elif isinstance(msg, TaskUpdatedMessage) and msg.status in TERMINAL_TASK_STATUSES:
+                pending_task_ids.discard(msg.task_id)
+        return parts
+
+    parts = await _drain(client.receive_response())
+    if parts:
+        latest_reply_parts = parts
+
+    # Güvenlik amaçlı üst sınır: normalde 1-2 turda biter, sonsuz döngüye
+    # girmemesi için makul bir tavan koyuyoruz.
+    for _ in range(5):
+        if not pending_task_ids:
+            break
+        parts = await _drain(client.receive_response())
+        if parts:
+            latest_reply_parts = parts
+
+    reply_parts = latest_reply_parts
 
     # Bu turda birden fazla subagent çağrılmış olabilir; UI'da göstermek için
     # en son çağrılanı (cevaba en çok katkısı olan) esas alıyoruz.
-    active_subagent = _active_subagents[-1] if _active_subagents else None
+    subagents_this_turn = _active_subagents.get(case_id, [])
+    active_subagent = subagents_this_turn[-1] if subagents_this_turn else None
 
-    return {"reply": "".join(reply_parts) or "...", "active_subagent": active_subagent, "case": get_case()}
+    return {"reply": "".join(reply_parts) or "...", "active_subagent": active_subagent, "case": get_case(case_id)}

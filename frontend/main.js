@@ -3,26 +3,42 @@
 // Electron main process. Önce backend zaten ayrı bir terminalde çalışıyor mu diye
 // /ping ile kontrol eder (demo sırasında en güvenilir yöntem budur — backend'i elle,
 // ayrı bir terminalde başlatın). Çalışmıyorsa birkaç olası python yolunu sırayla
-// deneyerek otomatik başlatmaya çalışır.
+// deneyerek otomatik başlatmaya çalışır VE gerçekten ayağa kalktığını /ping ile
+// doğrular — sadece "bir süreç başlattım" demek yetmez, o süreç bir saniye sonra
+// çökebilir (ör. eksik pip paketi). Başarısız olursa sessizce boş bir pencere
+// açmak yerine kullanıcıya AÇIK bir hata penceresi gösteriyoruz.
 
-const { app, BrowserWindow } = require("electron");
+const { app, BrowserWindow, dialog } = require("electron");
 const { spawn } = require("child_process");
-const fs = require("fs");
 const path = require("path");
 
 const PROJECT_ROOT = path.join(__dirname, "..");
 const BACKEND_PORT = 8000;
 const PING_URL = `http://127.0.0.1:${BACKEND_PORT}/ping`;
+const BACKEND_START_TIMEOUT_MS = 45000; // Whisper modeli ilk yüklemede birkaç saniye sürebilir
 
 let backendProcess = null;
+let backendStderrTail = "";
 
-async function isBackendAlreadyRunning() {
+async function pingOnce() {
   try {
     const res = await fetch(PING_URL, { signal: AbortSignal.timeout(1000) });
     return res.ok;
   } catch {
     return false;
   }
+}
+
+async function waitForBackend(timeoutMs) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    if (await pingOnce()) return true;
+    // backend süreci başlatılamadan (spawn hatası) veya çökerek erken
+    // kapandıysa, kalan süreyi beklemeye gerek yok.
+    if (backendProcess && backendProcess.exitCode !== null) return false;
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  return false;
 }
 
 function candidatePythonPaths() {
@@ -35,42 +51,71 @@ function candidatePythonPaths() {
   return candidates.filter((p, i, arr) => arr.indexOf(p) === i);
 }
 
-function trySpawn(pythonBin, remaining) {
+function trySpawn(pythonBin) {
   console.log(`[backend] deneniyor: ${pythonBin}`);
+  backendStderrTail = "";
   const proc = spawn(
     pythonBin,
     ["-m", "uvicorn", "backend.main:app", "--port", String(BACKEND_PORT)],
-    { cwd: PROJECT_ROOT, stdio: "inherit" }
+    { cwd: PROJECT_ROOT }
   );
 
-  proc.on("error", (err) => {
-    console.warn(`[backend] "${pythonBin}" başarısız: ${err.message}`);
-    if (remaining.length > 0) {
-      trySpawn(remaining[0], remaining.slice(1));
-    } else {
-      console.error(
-        "[backend] Hiçbir python yolu çalışmadı. Backend'i elle başlatın:\n" +
-          "  source .venv/bin/activate && uvicorn backend.main:app --port 8000"
-      );
+  proc.stdout.on("data", (chunk) => process.stdout.write(chunk));
+  proc.stderr.on("data", (chunk) => {
+    process.stderr.write(chunk);
+    backendStderrTail = (backendStderrTail + chunk.toString()).slice(-4000);
+  });
+  proc.on("exit", (code) => {
+    if (code !== null && code !== 0) {
+      console.error(`[backend] "${pythonBin}" beklenmedik şekilde kapandı (kod ${code}).`);
     }
   });
 
   backendProcess = proc;
+  return new Promise((resolve) => {
+    proc.on("error", (err) => {
+      backendStderrTail += `\n[spawn hatası] ${err.message}`;
+      resolve(false);
+    });
+    // spawn hatası hemen gelmezse, waitForBackend zaten exitCode'u izleyip
+    // erken çıkışı (ör. ImportError) yakalayacak.
+    resolve(true);
+  });
 }
 
 async function ensureBackend() {
-  if (await isBackendAlreadyRunning()) {
+  if (await pingOnce()) {
     console.log("[backend] zaten çalışıyor, ayrıca başlatılmayacak.");
-    return;
+    return true;
   }
-  const [first, ...rest] = candidatePythonPaths();
-  trySpawn(first, rest);
+
+  for (const pythonBin of candidatePythonPaths()) {
+    const spawned = await trySpawn(pythonBin);
+    if (!spawned) continue;
+    const ok = await waitForBackend(BACKEND_START_TIMEOUT_MS);
+    if (ok) return true;
+    if (backendProcess) backendProcess.kill();
+  }
+  return false;
+}
+
+function showBackendFailureDialog() {
+  const detail =
+    "Backend başlatılamadı ya da hemen çöktü. En sık sebep: Python paketleri eksik/güncel değil.\n\n" +
+    "Terminalde şunu çalıştırıp tekrar deneyin:\n" +
+    "  source .venv/bin/activate\n" +
+    "  pip install -r backend/requirements.txt\n" +
+    "  uvicorn backend.main:app --port 8000\n\n" +
+    (backendStderrTail ? `Son hata çıktısı:\n${backendStderrTail.slice(-1500)}` : "");
+
+  dialog.showErrorBox("Backend'e bağlanılamadı", detail);
 }
 
 function createWindow() {
   const win = new BrowserWindow({
     width: 1100,
     height: 750,
+    title: "Yaşlı Bakım Rehberi",
     webPreferences: {
       contextIsolation: true,
     },
@@ -78,8 +123,11 @@ function createWindow() {
   win.loadFile(path.join(__dirname, "renderer", "index.html"));
 }
 
+app.setName("Yaşlı Bakım Rehberi");
+
 app.whenReady().then(async () => {
-  await ensureBackend();
+  const backendReady = await ensureBackend();
+  if (!backendReady) showBackendFailureDialog();
   createWindow();
 
   app.on("activate", () => {

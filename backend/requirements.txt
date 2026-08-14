@@ -4,4 +4,7 @@ pydantic
 claude-agent-sdk
 faster-whisper
 python-multipart
+supabase
+python-dotenv
+twilio
 pytest

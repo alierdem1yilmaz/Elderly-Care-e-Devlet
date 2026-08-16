@@ -6,6 +6,7 @@
 # prompt'ta hem her subagent'ın kendi prompt'unda tekrarlanarak uygulanır.
 
 import json
+import logging
 from pathlib import Path
 
 from claude_agent_sdk import (
@@ -13,6 +14,7 @@ from claude_agent_sdk import (
     AssistantMessage,
     ClaudeAgentOptions,
     ClaudeSDKClient,
+    ClaudeSDKError,
     HookContext,
     HookMatcher,
     SubagentStartHookInput,
@@ -21,6 +23,8 @@ from claude_agent_sdk import (
     TERMINAL_TASK_STATUSES,
     TextBlock,
 )
+
+logger = logging.getLogger(__name__)
 
 from backend.tools import (
     TOOL_ADD_CHECKLIST_ITEM,
@@ -193,6 +197,13 @@ def _build_options(case_id: str) -> ClaudeAgentOptions:
         _active_subagents[case_id].append(input_data["agent_type"])
         return {}
 
+    def _on_stderr(line: str) -> None:
+        # `claude` CLI alt süreci çökerse (ör. exit code 1), SDK'nın fırlattığı
+        # hata mesajı sadece "Check stderr output for details" diyor, gerçek
+        # sebebi içermiyor — o yüzden ham stderr'i burada kendimiz loglayıp
+        # asıl sebebi (varsa) terminalde görünür kılıyoruz.
+        logger.warning("claude CLI stderr (case=%s): %s", case_id, line)
+
     return ClaudeAgentOptions(
         system_prompt=ORCHESTRATOR_SYSTEM_PROMPT,
         agents=AGENTS,
@@ -207,6 +218,7 @@ def _build_options(case_id: str) -> ClaudeAgentOptions:
         allowed_tools=["Task"],
         permission_mode="bypassPermissions",
         hooks={"SubagentStart": [HookMatcher(hooks=[_on_subagent_start])]},
+        stderr=_on_stderr,
     )
 
 
@@ -219,6 +231,20 @@ async def _get_or_create_client(case_id: str) -> ClaudeSDKClient:
     return client
 
 
+async def _evict_client(case_id: str) -> None:
+    # Alt süreç (claude CLI) bir kere çökünce, o case_id için önbellekteki
+    # client KALICI OLARAK bozuk kalıyordu — her sonraki mesaj, backend
+    # yeniden başlatılana kadar aynı hatayı vermeye devam ediyordu (canlı
+    # testte doğrulandı). Bozuk client'ı burada önbellekten atıp bir dahaki
+    # mesajda sıfırdan, sağlıklı bir süreç kurulmasını sağlıyoruz.
+    client = _clients.pop(case_id, None)
+    if client is not None:
+        try:
+            await client.disconnect()
+        except Exception:
+            pass  # zaten çökmüş bir süreci kapatmaya çalışıyoruz, hata beklenir
+
+
 async def disconnect_all() -> None:
     for client in _clients.values():
         await client.disconnect()
@@ -226,7 +252,7 @@ async def disconnect_all() -> None:
     _active_subagents.clear()
 
 
-async def handle_message(case_id: str, message: str) -> dict:
+async def _run_turn(case_id: str, message: str) -> dict:
     client = await _get_or_create_client(case_id)
 
     _active_subagents[case_id] = []
@@ -291,3 +317,16 @@ async def handle_message(case_id: str, message: str) -> dict:
     active_subagent = subagents_this_turn[-1] if subagents_this_turn else None
 
     return {"reply": "".join(reply_parts) or "...", "active_subagent": active_subagent, "case": get_case(case_id)}
+
+
+async def handle_message(case_id: str, message: str) -> dict:
+    try:
+        return await _run_turn(case_id, message)
+    except ClaudeSDKError:
+        # `claude` CLI alt süreci bir sebeple çökmüş (ağ kesintisi, geçici bir
+        # hata vb.) — önbellekteki bozuk client'ı atıp SIFIRDAN bir süreçle bir
+        # kez daha deniyoruz. Böylece kullanıcı aynı hatayı tekrar tekrar
+        # görüp backend'in yeniden başlatılmasını beklemek zorunda kalmıyor.
+        logger.warning("Client çöktü (case=%s), sıfırdan bağlanıp tekrar deneniyor", case_id, exc_info=True)
+        await _evict_client(case_id)
+        return await _run_turn(case_id, message)
